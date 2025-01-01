@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // BackfillClient contains the necessary functions from the federation client to perform a backfill request

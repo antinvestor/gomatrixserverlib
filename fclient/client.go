@@ -30,10 +30,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/matrix-org/gomatrix"
-	"github.com/matrix-org/gomatrixserverlib"
-	"github.com/matrix-org/gomatrixserverlib/spec"
-	"github.com/matrix-org/util"
+	"github.com/antinvestor/gomatrix"
+	"github.com/antinvestor/gomatrixserverlib"
+	"github.com/antinvestor/gomatrixserverlib/spec"
+	"github.com/pitabwire/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -523,7 +523,7 @@ func (fc *Client) DoRequestAndParseResponse(
 	}
 
 	if response.StatusCode/100 != 2 { // not 2xx
-		// Adapted from https://github.com/matrix-org/gomatrix/blob/master/client.go
+		// Adapted from https://github.com/antinvestor/gomatrix/blob/master/client.go
 		var contents []byte
 		contents, err = io.ReadAll(response.Body)
 		if err != nil {

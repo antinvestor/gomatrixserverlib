@@ -18,7 +18,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 var (

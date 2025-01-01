@@ -10,8 +10,8 @@ cd `dirname $0`
 go get -u \
    github.com/client9/misspell/cmd/misspell \
    golang.org/x/crypto/ed25519 \
-   github.com/matrix-org/util \
-   github.com/matrix-org/gomatrix \
+   github.com/pitabwire/util \
+   github.com/antinvestor/gomatrix \
    github.com/tidwall/gjson \
    github.com/tidwall/sjson \
    github.com/pkg/errors \

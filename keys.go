@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // ServerKeys are the ed25519 signing keys published by a matrix server.

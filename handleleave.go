@@ -17,7 +17,7 @@ package gomatrixserverlib
 import (
 	"fmt"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 type HandleMakeLeaveResponse struct {

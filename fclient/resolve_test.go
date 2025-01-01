@@ -7,9 +7,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
-	"github.com/miekg/dns"
 	"gopkg.in/h2non/gock.v1"
+
+	"github.com/antinvestor/gomatrixserverlib/spec"
+	"github.com/miekg/dns"
 )
 
 // assertCritical checks whether the second parameter it gets has the same type

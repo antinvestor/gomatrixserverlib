@@ -3,7 +3,7 @@ package gomatrixserverlib
 import (
 	"encoding/json"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // A Transaction is used to push data from one matrix server to another matrix

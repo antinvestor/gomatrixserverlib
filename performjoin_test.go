@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matrix-org/gomatrix"
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrix"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/stretchr/testify/assert"
 )
 

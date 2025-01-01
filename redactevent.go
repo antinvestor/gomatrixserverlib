@@ -3,7 +3,7 @@ package gomatrixserverlib
 import (
 	"encoding/json"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // For satisfying "Upon receipt of a redaction event, the server must strip off any keys not in the following list:"

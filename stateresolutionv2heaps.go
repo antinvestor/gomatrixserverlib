@@ -17,7 +17,7 @@ package gomatrixserverlib
 import (
 	"strings"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // A stateResV2ConflictedPowerLevel is used to sort the events by effective

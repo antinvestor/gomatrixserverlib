@@ -16,7 +16,7 @@ package gomatrixserverlib
 import (
 	"unsafe"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // EDU represents a EDU received via federation

@@ -3,7 +3,7 @@ package fclient
 import (
 	"encoding/json"
 
-	"github.com/matrix-org/gomatrixserverlib"
+	"github.com/antinvestor/gomatrixserverlib"
 )
 
 // A RelayEntry is used to track the nid of an event received from a relay server.

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // ResolveStateConflicts takes a list of state events with conflicting state keys

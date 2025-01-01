@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // EventLoadResult is the result of loading and verifying an event in the EventsLoader.

@@ -22,8 +22,8 @@ import (
 
 	"golang.org/x/crypto/ed25519"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
-	"github.com/matrix-org/util"
+	"github.com/antinvestor/gomatrixserverlib/spec"
+	"github.com/pitabwire/util"
 )
 
 // StateNeeded lists the event types and state_keys needed to authenticate an event.

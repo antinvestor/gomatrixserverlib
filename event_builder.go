@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
-	"github.com/matrix-org/util"
+	"github.com/antinvestor/gomatrixserverlib/spec"
+	"github.com/pitabwire/util"
 	"github.com/tidwall/sjson"
 	"golang.org/x/crypto/ed25519"
 )

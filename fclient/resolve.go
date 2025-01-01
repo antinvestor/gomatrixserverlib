@@ -21,7 +21,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/matrix-org/gomatrixserverlib/spec"
+	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 // ResolutionResult is a result of looking up a Matrix homeserver according to
