@@ -1,5 +1,7 @@
 github.com/antinvestor/gomatrix v0.1.0 h1:vR9g38qXcWy7VJm+rZNZuKu9pt6qEbgBuJoM5qQ3w6Y=
 github.com/antinvestor/gomatrix v0.1.0/go.mod h1:ew4nnccrtkFpnyZ2zDLdWRl73+h4EaMvboCFXkb5AwQ=
+github.com/antinvestor/gomatrix v0.1.2 h1:/22DvtqwQ2Ud9D0f7ycCUkaAEI9NeMv71JOEImDiDWM=
+github.com/antinvestor/gomatrix v0.1.2/go.mod h1:ew4nnccrtkFpnyZ2zDLdWRl73+h4EaMvboCFXkb5AwQ=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
