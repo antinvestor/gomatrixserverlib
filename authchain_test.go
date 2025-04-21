@@ -84,7 +84,7 @@ func provideEvents(t *testing.T, events [][]byte) gomatrixserverlib.EventProvide
 		}
 		eventMap[ev.EventID()] = ev
 	}
-	return func(roomVer gomatrixserverlib.RoomVersion, eventIDs []string) (result []gomatrixserverlib.PDU, err error) {
+	return func(ctx context.Context, roomVer gomatrixserverlib.RoomVersion, eventIDs []string) (result []gomatrixserverlib.PDU, err error) {
 		for _, id := range eventIDs {
 			if ev, ok := eventMap[id]; ok {
 				result = append(result, ev)

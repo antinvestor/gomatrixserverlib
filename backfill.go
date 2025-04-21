@@ -30,7 +30,7 @@ type BackfillRequester interface {
 	// will be servers that are in the room already. The entries at the beginning are preferred servers
 	// and will be tried first. An empty list will fail the request.
 	ServersAtEvent(ctx context.Context, roomID, eventID string) []spec.ServerName
-	ProvideEvents(roomVer RoomVersion, eventIDs []string) ([]PDU, error)
+	ProvideEvents(ctx context.Context, roomVer RoomVersion, eventIDs []string) ([]PDU, error)
 }
 
 // RequestBackfill implements the server logic for making backfill requests to other servers.

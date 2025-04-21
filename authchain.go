@@ -8,7 +8,7 @@ import (
 )
 
 // EventProvider returns the requested list of events.
-type EventProvider func(roomVer RoomVersion, eventIDs []string) ([]PDU, error)
+type EventProvider func(ctx context.Context, roomVer RoomVersion, eventIDs []string) ([]PDU, error)
 
 // VerifyEventAuthChain will verify that the event is allowed according to its auth_events, and then
 // recursively verify each of those auth_events.
@@ -46,7 +46,7 @@ func VerifyEventAuthChain(ctx context.Context, eventToVerify PDU, provideEvents 
 		}
 		// fetch the events and add them to the lookup table
 		if len(need) > 0 {
-			newEvents, err := provideEvents(eventToVerify.Version(), need)
+			newEvents, err := provideEvents(ctx, eventToVerify.Version(), need)
 			if err != nil {
 				return fmt.Errorf("gomatrixserverlib: VerifyEventAuthChain failed to obtain auth events: %w", err)
 			}
@@ -56,7 +56,7 @@ func VerifyEventAuthChain(ctx context.Context, eventToVerify PDU, provideEvents 
 			eventsToVerify = append(eventsToVerify, newEvents...) // verify these events too
 		}
 		// verify the event
-		if err := checkAllowedByAuthEvents(curr, eventsByID, provideEvents, userIDForSender); err != nil {
+		if err := checkAllowedByAuthEvents(ctx, curr, eventsByID, provideEvents, userIDForSender); err != nil {
 			return fmt.Errorf("gomatrixserverlib: VerifyEventAuthChain %v failed auth check: %w", curr.EventID(), err)
 		}
 		// add to the verified list

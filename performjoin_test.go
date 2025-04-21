@@ -167,7 +167,7 @@ func TestPerformJoin(t *testing.T) {
 		t.Fatalf("Failed building create event: %v", err)
 	}
 
-	eventProvider := func(roomVer RoomVersion, eventIDs []string) ([]PDU, error) {
+	eventProvider := func(ctx context.Context, roomVer RoomVersion, eventIDs []string) ([]PDU, error) {
 		for _, eventID := range eventIDs {
 			if eventID == createEvent.EventID() {
 				return []PDU{createEvent}, nil
@@ -374,7 +374,7 @@ func TestPerformJoinPseudoID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed building create event: %v", err)
 	}
-	eventProvider := func(roomVer RoomVersion, eventIDs []string) ([]PDU, error) {
+	eventProvider := func(ctx context.Context, roomVer RoomVersion, eventIDs []string) ([]PDU, error) {
 		var res []PDU
 		for _, eventID := range eventIDs {
 			if eventID == createEvent.EventID() {
