@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func TestMarshalBase64(t *testing.T) {
