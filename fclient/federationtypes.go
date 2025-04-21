@@ -240,7 +240,7 @@ func (r RespState) MarshalJSON() ([]byte, error) {
 	if len(r.AuthEvents) == 0 {
 		r.AuthEvents = gomatrixserverlib.EventJSONs{}
 	}
-	return json.Marshal(respStateFields{ // nolint:gosimple
+	return json.Marshal(respStateFields{ // nolint:staticcheck
 		StateEvents: r.StateEvents,
 		AuthEvents:  r.AuthEvents,
 	})
@@ -483,7 +483,6 @@ type Version struct {
 
 // MSC2836EventRelationshipsRequest is a request to /event_relationships from
 // https://github.com/matrix-org/matrix-doc/blob/kegan/msc/threading/proposals/2836-threading.md
-// nolint:maligned
 type MSC2836EventRelationshipsRequest struct {
 	EventID         string `json:"event_id"`
 	MaxDepth        int    `json:"max_depth"`

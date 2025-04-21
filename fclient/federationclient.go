@@ -409,7 +409,7 @@ func (ac *federationClient) SendInviteV2(
 		}
 		// assume v1 as per spec: https://matrix.org/docs/spec/server_server/latest#put-matrix-federation-v1-invite-roomid-eventid
 		// Servers which receive a v1 invite request must assume that the room version is either "1" or "2".
-		res = RespInviteV2{ // nolint:gosimple
+		res = RespInviteV2{ // nolint:staticcheck
 			Event: resp.Event,
 		}
 	}

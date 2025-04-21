@@ -129,7 +129,7 @@ func PerformJoin(
 				ServerName: input.ServerName,
 				Transient:  false,
 				Reachable:  true,
-				Err:        fmt.Errorf("Cannot create user room key"),
+				Err:        fmt.Errorf("cannot create user room key"),
 			}
 		}
 		keyID = "ed25519:1"

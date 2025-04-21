@@ -155,7 +155,6 @@ func WithUserAgent(userAgent string) ClientOption {
 const destinationTripperLifetime = time.Minute * 5 // how long to keep an entry
 const destinationTripperReapInterval = time.Minute // how often to check for dead entries
 
-// nolint:maligned
 type destinationTripper struct {
 	// transports maps an TLS server name with an HTTP transport.
 	transports      map[string]*destinationTripperTransport

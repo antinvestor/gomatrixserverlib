@@ -37,17 +37,17 @@ func GetUserFromToken(token string) (user string, err error) {
 func ValidateToken(op TokenOptions, token string) error {
 	mac, err := deSerializeMacaroon(token)
 	if err != nil {
-		return errors.New("Token does not represent a valid macaroon")
+		return errors.New("token does not represent a valid macaroon")
 	}
 
 	caveats, err := mac.VerifySignature(op.ServerPrivateKey, nil)
 	if err != nil {
-		return errors.New("Provided token was not issued by this server")
+		return errors.New("provided token was not issued by this server")
 	}
 
 	err = verifyCaveats(caveats, op.UserID)
 	if err != nil {
-		return errors.New("Provided token not authorized")
+		return errors.New("provided token not authorized")
 	}
 	return nil
 }
@@ -86,10 +86,10 @@ LoopCaveat:
 	if verified == 7 {
 		return nil
 	} else if verified >= 8 {
-		return errors.New("Unknown caveat present")
+		return errors.New("unknown caveat present")
 	}
 
-	return errors.New("Required caveats not present")
+	return errors.New("required caveats not present")
 }
 
 func verifyExpiry(t string, now int) bool {

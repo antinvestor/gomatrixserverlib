@@ -44,16 +44,19 @@ type TestRestrictedRoomJoinQuerier struct {
 	memberEvent      PDU
 }
 
-func (r *TestRestrictedRoomJoinQuerier) CurrentStateEvent(ctx context.Context, roomID spec.RoomID, eventType string, stateKey string) (PDU, error) {
+func (r *TestRestrictedRoomJoinQuerier) CurrentStateEvent(_ context.Context, _ spec.RoomID, eventType string, stateKey string) (PDU, error) {
 	if r.stateEventErr {
 		return nil, fmt.Errorf("err")
 	}
 	var event PDU
-	if eventType == spec.MRoomJoinRules {
+
+	switch eventType {
+
+	case spec.MRoomJoinRules:
 		event = r.joinRulesEvent
-	} else if eventType == spec.MRoomPowerLevels {
+	case spec.MRoomPowerLevels:
 		event = r.powerLevelsEvent
-	} else if eventType == spec.MRoomMember {
+	case spec.MRoomMember:
 		event = r.memberEvent
 	}
 	return event, nil

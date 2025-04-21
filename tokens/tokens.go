@@ -47,7 +47,7 @@ type TokenOptions struct {
 // token authentication ("m.login.token")
 func GenerateLoginToken(op TokenOptions) (string, error) {
 	if !isValidTokenOptions(op) {
-		return "", errors.New("The given TokenOptions is invalid")
+		return "", errors.New("the given TokenOptions is invalid")
 	}
 
 	mac, err := generateBaseMacaroon(op.ServerPrivateKey, op.ServerName, op.UserID)
@@ -105,7 +105,7 @@ func generateBaseMacaroon(
 }
 
 func macaroonError(err error) error {
-	return fmt.Errorf("Macaroon creation failed: %s", err.Error())
+	return fmt.Errorf("macaroon creation failed: %s", err.Error())
 }
 
 // serializeMacaroon takes a macaroon to be serialized.

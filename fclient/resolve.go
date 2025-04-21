@@ -47,7 +47,7 @@ func ResolveServer(ctx context.Context, serverName spec.ServerName) (results []R
 func resolveServer(ctx context.Context, serverName spec.ServerName, checkWellKnown bool) (results []ResolutionResult, err error) {
 	host, port, valid := spec.ParseAndValidateServerName(serverName)
 	if !valid {
-		err = fmt.Errorf("Invalid server name")
+		err = fmt.Errorf("invalid server name")
 		return
 	}
 

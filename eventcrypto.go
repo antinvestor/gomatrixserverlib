@@ -288,7 +288,7 @@ func checkEventContentHash(eventJSON []byte) error {
 	sha256Hash := sha256.Sum256(hashableEventJSON)
 
 	if !bytes.Equal(sha256Hash[:], []byte(hash)) {
-		return fmt.Errorf("Invalid Sha256 content hash: %v != %v", sha256Hash[:], []byte(hash))
+		return fmt.Errorf("invalid Sha256 content hash: %v != %v", sha256Hash[:], []byte(hash))
 	}
 
 	return nil

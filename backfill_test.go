@@ -101,7 +101,8 @@ func TestRequestBackfillMultipleServers(t *testing.T) {
 			if roomID != testRoomID {
 				return nil, fmt.Errorf("bad room id: %s", roomID)
 			}
-			if server == serverA {
+			switch server {
+			case serverA:
 				// server A returns events 1 and 3.
 				return &Transaction{
 					Origin:         origin,
@@ -110,7 +111,8 @@ func TestRequestBackfillMultipleServers(t *testing.T) {
 						testBackfillEvents[1], testBackfillEvents[3],
 					},
 				}, nil
-			} else if server == serverB {
+
+			case serverB:
 				// server B returns events 0 and 2 and 3.
 				return &Transaction{
 					Origin:         origin,
@@ -119,8 +121,10 @@ func TestRequestBackfillMultipleServers(t *testing.T) {
 						testBackfillEvents[0], testBackfillEvents[2], testBackfillEvents[3],
 					},
 				}, nil
+
+			default:
+				return nil, fmt.Errorf("bad server name: %s", server)
 			}
-			return nil, fmt.Errorf("bad server name: %s", server)
 		},
 	}
 	result, err := RequestBackfill(ctx, serverA, tbr, keyRing, testRoomID, RoomVersionV1, testFromEventIDs, testLimit, UserIDForSenderTest)
