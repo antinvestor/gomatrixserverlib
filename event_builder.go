@@ -144,7 +144,7 @@ func (eb *EventBuilder) Build(
 	}
 	eventStruct.EventBuilder = *eb
 	if eventIDFormat == EventIDFormatV1 {
-		eventStruct.EventID = fmt.Sprintf("$%s:%s", util.RandomString(16), origin)
+		eventStruct.EventID = fmt.Sprintf("$%s:%s", util.IDString(), origin)
 	}
 	eventStruct.OriginServerTS = spec.AsTimestamp(now)
 	eventStruct.Origin = origin

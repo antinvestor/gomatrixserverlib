@@ -141,7 +141,7 @@ func newEventFromUntrustedJSONV2(eventJSON []byte, roomVersion IRoomVersion) (PD
 		return nil, err
 	}
 
-	if err := checkID(res.eventFields.RoomID, "room", '!'); err != nil {
+	if err = checkID(res.eventFields.RoomID, "room", '!'); err != nil {
 		return nil, err
 	}
 
