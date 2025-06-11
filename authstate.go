@@ -3,6 +3,7 @@ package gomatrixserverlib
 import (
 	"context"
 	"fmt"
+
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/pitabwire/util"
 )

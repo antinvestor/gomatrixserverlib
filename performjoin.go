@@ -5,10 +5,10 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
-	"github.com/pitabwire/util"
 	"time"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
+	"github.com/pitabwire/util"
 )
 
 type PerformJoinInput struct {
