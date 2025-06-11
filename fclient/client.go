@@ -35,7 +35,6 @@ import (
 	"github.com/antinvestor/gomatrixserverlib"
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/pitabwire/util"
-	"github.com/sirupsen/logrus"
 )
 
 // Default HTTPS request timeout
@@ -375,8 +374,7 @@ retryResolution:
 		if err == nil {
 			return resp, nil
 		}
-		util.GetLogger(r.Context()).Debugf("Error sending request to %s: %v",
-			u.String(), err)
+		util.Log(r.Context()).WithError(err).WithField("user", u.String()).Debug("Error sending request to user")
 	}
 
 	// We failed to reach any of the locations in the resolution results,
@@ -640,11 +638,10 @@ func (fc *Client) DoRequestAndParseResponse(
 // Body which the caller is expected to close.
 func (fc *Client) DoHTTPRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
 	reqID := util.RandomString(12)
-	logger := util.GetLogger(ctx).WithFields(logrus.Fields{
-		"out.req.ID":     reqID,
-		"out.req.method": req.Method,
-		"out.req.uri":    req.URL,
-	})
+	logger := util.Log(ctx).WithField("out.req.ID", reqID).
+		WithField("out.req.method", req.Method).
+		WithField("out.req.uri", req.URL)
+
 	logger.Trace("Outgoing request")
 	newCtx := util.ContextWithLogger(ctx, logger)
 	if fc.userAgent != "" {
@@ -659,10 +656,9 @@ func (fc *Client) DoHTTPRequest(ctx context.Context, req *http.Request) (*http.R
 	}
 
 	// we haven't yet read the body, so this is slightly premature, but it's the easiest place.
-	logger.WithFields(logrus.Fields{
-		"out.req.code":        resp.StatusCode,
-		"out.req.duration_ms": int(time.Since(start) / time.Millisecond),
-	}).Trace("Outgoing request returned")
+	logger.WithField("out.req.code", resp.StatusCode).
+		WithField("out.req.duration_ms", int(time.Since(start)/time.Millisecond)).
+		Trace("Outgoing request returned")
 
 	return resp, nil
 }

@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
-	"github.com/sirupsen/logrus"
 )
 
 type GetLatestEvents func(ctx context.Context, roomID spec.RoomID, eventsNeeded []StateKeyTuple) (LatestEvents, error)
@@ -62,11 +61,9 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 	}
 
 	logger := createInviteLogger(ctx, input.RoomID, input.Inviter, input.Invitee, "")
-	logger.WithFields(logrus.Fields{
-		"room_version": input.RoomVersion,
-		"target_local": input.IsTargetLocal,
-		"origin_local": true,
-	}).Debug("processing invite event")
+	logger.WithField("room_version", input.RoomVersion).
+		WithField("target_local", input.IsTargetLocal).
+		WithField("origin_local", true).Debug("processing invite event")
 
 	inviteState := input.StrippedState
 	if len(inviteState) == 0 {
@@ -210,7 +207,7 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 				logger.WithError(err).Error("fedClient.SendInviteV3 failed")
 				return nil, spec.Forbidden(err.Error())
 			}
-			logger.Debugf("Federated SendInviteV3 success to user %s", input.Invitee.String())
+			logger.WithField("user", input.Invitee.String()).Debug("Federated SendInviteV3 success to user")
 
 			// Have the inviter also sign the event
 			inviteEvent = inviteEvent.Sign(
@@ -226,7 +223,7 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 
 			err = input.StoreSenderIDFromPublicID(ctx, spec.SenderID(*inviteEvent.StateKey()), input.Invitee.String(), input.RoomID)
 			if err != nil {
-				logger.WithError(err).Errorf("failed storing senderID for %s", input.Invitee.String())
+				logger.WithError(err).WithField("user", input.Invitee.String()).Error("failed storing senderID for user")
 				return nil, spec.InternalServerError{}
 			}
 
@@ -265,7 +262,7 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 				logger.WithError(err).WithField("event_id", eventID).Error("fedClient.SendInvite failed")
 				return nil, spec.Forbidden(err.Error())
 			}
-			logger.Debugf("Federated SendInvite success with event ID %s", eventID)
+			logger.WithField("event id", eventID).Debug("Federated SendInvite success")
 		}
 	}
 

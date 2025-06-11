@@ -10,7 +10,6 @@ import (
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/pitabwire/util"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -172,7 +171,7 @@ type JSONVerifier interface {
 
 // VerifyJSONs implements JSONVerifier.
 func (k KeyRing) VerifyJSONs(ctx context.Context, requests []VerifyJSONRequest) ([]VerifyJSONResult, error) { // nolint: gocyclo
-	logger := util.GetLogger(ctx)
+	logger := util.Log(ctx)
 	results := make([]VerifyJSONResult, len(requests))
 	keyIDs := make([][]KeyID, len(requests))
 
@@ -296,10 +295,8 @@ func (k KeyRing) VerifyJSONs(ctx context.Context, requests []VerifyJSONRequest) 
 			requestedServers = append(requestedServers, string(reqs.ServerName))
 		}
 
-		logger.WithFields(logrus.Fields{
-			"servers":  requestedServers,
-			"fetchers": len(k.KeyFetchers),
-		}).Warn("failed to fetch keys for some servers")
+		logger.WithField("servers", requestedServers).
+			WithField("fetchers", len(k.KeyFetchers)).Warn("failed to fetch keys for some servers")
 	}
 
 	// Now that we've fetched all of the keys we need, try to check

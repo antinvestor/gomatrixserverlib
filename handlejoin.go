@@ -80,7 +80,7 @@ func HandleMakeJoin(input HandleMakeJoinInput) (*HandleMakeJoinResponse, error) 
 	switch e := err.(type) {
 	case nil:
 	case spec.MatrixError:
-		util.GetLogger(input.Context).WithError(err).Error("checkRestrictedJoin failed")
+		util.Log(input.Context).WithError(err).Error("checkRestrictedJoin failed")
 		return nil, e
 	default:
 		return nil, spec.InternalServerError{Err: "checkRestrictedJoin failed"}
@@ -417,7 +417,7 @@ func HandleSendJoin(input HandleSendJoinInput) (*HandleSendJoinResponse, error) 
 	// Check that the event is signed by the server sending the request.
 	redacted, err := verImpl.RedactEventJSON(event.JSON())
 	if err != nil {
-		util.GetLogger(input.Context).WithError(err).Error("RedactEventJSON failed")
+		util.Log(input.Context).WithError(err).Error("RedactEventJSON failed")
 		return nil, spec.BadJSON("The event JSON could not be redacted")
 	}
 
@@ -429,7 +429,7 @@ func HandleSendJoin(input HandleSendJoinInput) (*HandleSendJoinResponse, error) 
 	}}
 	verifyResults, err := input.Verifier.VerifyJSONs(input.Context, verifyRequests)
 	if err != nil {
-		util.GetLogger(input.Context).WithError(err).Error("keys.VerifyJSONs failed")
+		util.Log(input.Context).WithError(err).Error("keys.VerifyJSONs failed")
 		return nil, spec.InternalServerError{}
 	}
 	if verifyResults[0].Error != nil {
@@ -444,8 +444,8 @@ func HandleSendJoin(input HandleSendJoinInput) (*HandleSendJoinResponse, error) 
 		return nil, spec.InternalServerError{Err: "internal server error"}
 	}
 
-	alreadyJoined := (existingMembership == spec.Join)
-	isBanned := (existingMembership == spec.Ban)
+	alreadyJoined := existingMembership == spec.Join
+	isBanned := existingMembership == spec.Ban
 
 	if isBanned {
 		return nil, spec.Forbidden("user is banned")
@@ -460,11 +460,11 @@ func HandleSendJoin(input HandleSendJoinInput) (*HandleSendJoinResponse, error) 
 	if memberContent.AuthorisedVia != "" {
 		authorisedVia, err := spec.NewUserID(memberContent.AuthorisedVia, true)
 		if err != nil {
-			util.GetLogger(input.Context).WithError(err).Errorf("The authorising username %q is invalid.", memberContent.AuthorisedVia)
+			util.Log(input.Context).WithError(err).WithField("username", memberContent.AuthorisedVia).Error("The authorising username is invalid.")
 			return nil, spec.BadJSON(fmt.Sprintf("The authorising username %q is invalid.", memberContent.AuthorisedVia))
 		}
 		if authorisedVia.Domain() != input.LocalServerName {
-			util.GetLogger(input.Context).Errorf("The authorising username %q does not belong to this server.", authorisedVia.String())
+			util.Log(input.Context).WithField("username", authorisedVia.String()).Error("The authorising username does not belong to this server.")
 			return nil, spec.BadJSON(fmt.Sprintf("The authorising username %q does not belong to this server.", authorisedVia.String()))
 		}
 	}

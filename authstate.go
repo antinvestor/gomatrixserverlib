@@ -232,7 +232,7 @@ func CheckStateResponse(
 	ctx context.Context, r StateResponse, roomVersion RoomVersion,
 	keyRing JSONVerifier, missingAuth EventProvider, userIDForSender spec.UserIDForSender,
 ) ([]PDU, []PDU, error) {
-	logger := util.GetLogger(ctx)
+	logger := util.Log(ctx)
 	authEvents := r.GetAuthEvents().UntrustedEvents(roomVersion)
 	stateEvents := r.GetStateEvents().UntrustedEvents(roomVersion)
 	var allEvents []PDU
@@ -260,7 +260,7 @@ func CheckStateResponse(
 	}
 
 	// Check if the events pass signature checks.
-	logger.Infof("Checking event signatures for %d events of room state", len(allEvents))
+	logger.WithField("event count", len(allEvents)).Info("Checking event signatures for events of room state")
 	errors := VerifyAllEventSignatures(ctx, allEvents, keyRing, userIDForSender)
 	if len(errors) != len(allEvents) {
 		return nil, nil, fmt.Errorf("expected %d errors but got %d", len(allEvents), len(errors))
@@ -294,7 +294,7 @@ func CheckStateResponse(
 	// For all of the events that weren't verified, remove them
 	// from the RespState. This way they won't be passed onwards.
 	if f := len(failures); f > 0 {
-		logger.Warnf("Discarding %d auth/state event(s) due to invalid signatures", f)
+		logger.WithField("failure count", f).Warn("Discarding auth/state event(s) due to invalid signatures")
 
 		for i := 0; i < len(authEvents); i++ {
 			if _, ok := failures[authEvents[i].EventID()]; ok {

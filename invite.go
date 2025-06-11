@@ -21,7 +21,6 @@ import (
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/pitabwire/util"
-	"github.com/sirupsen/logrus"
 )
 
 type RoomQuerier interface {
@@ -130,7 +129,7 @@ func GenerateStrippedState(
 func abortIfAlreadyJoined(ctx context.Context, roomID spec.RoomID, invitedUser spec.SenderID, membershipQuerier MembershipQuerier) error {
 	membership, err := membershipQuerier.CurrentMembership(ctx, roomID, invitedUser)
 	if err != nil {
-		util.GetLogger(ctx).WithError(err).Error("failed getting user membership")
+		util.Log(ctx).WithError(err).Error("failed getting user membership")
 		return spec.InternalServerError{}
 
 	}
@@ -164,19 +163,17 @@ func abortIfAlreadyJoined(ctx context.Context, roomID spec.RoomID, invitedUser s
 		// For now we will implement option 2. Since in the abesence of a retry
 		// mechanism it will be equivalent to option 1, and we don't have a
 		// signalling mechanism to implement option 3.
-		util.GetLogger(ctx).Error("user is already joined to room")
+		util.Log(ctx).Error("user is already joined to room")
 		return spec.Forbidden("user is already joined to room")
 	}
 	return nil
 }
 
-func createInviteLogger(ctx context.Context, roomID spec.RoomID, inviter spec.UserID, invitee spec.UserID, eventID string) *logrus.Entry {
-	return util.GetLogger(ctx).WithFields(map[string]interface{}{
-		"inviter":  inviter.String(),
-		"invitee":  invitee.String(),
-		"room_id":  roomID.String(),
-		"event_id": eventID,
-	})
+func createInviteLogger(ctx context.Context, roomID spec.RoomID, inviter spec.UserID, invitee spec.UserID, eventID string) *util.LogEntry {
+	return util.Log(ctx).WithField("inviter", inviter.String()).
+		WithField("invitee", invitee.String()).
+		WithField("room_id", roomID.String()).
+		WithField("event_id", eventID)
 }
 
 func setUnsignedFieldForInvite(event PDU, inviteState []InviteStrippedState) error {

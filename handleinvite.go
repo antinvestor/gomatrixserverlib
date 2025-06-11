@@ -21,7 +21,6 @@ import (
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/pitabwire/util"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -96,7 +95,7 @@ func HandleInvite(ctx context.Context, input HandleInviteInput) (PDU, error) {
 	}}
 	verifyResults, err := input.Verifier.VerifyJSONs(ctx, verifyRequests)
 	if err != nil {
-		util.GetLogger(ctx).WithError(err).Error("keys.VerifyJSONs failed")
+		util.Log(ctx).WithError(err).Error("keys.VerifyJSONs failed")
 		return nil, spec.InternalServerError{}
 	}
 	if verifyResults[0].Error != nil {
@@ -141,7 +140,7 @@ func HandleInviteV3(ctx context.Context, input HandleInviteV3Input) (PDU, error)
 	// Otherwise we need to create a new senderID
 	invitedSenderID, signingKey, err := input.GetOrCreateSenderID(ctx, input.InvitedUser, input.RoomID, string(input.RoomVersion))
 	if err != nil {
-		util.GetLogger(ctx).WithError(err).Error("GetOrCreateSenderID failed")
+		util.Log(ctx).WithError(err).Error("GetOrCreateSenderID failed")
 		return nil, spec.InternalServerError{}
 	}
 
@@ -153,7 +152,7 @@ func HandleInviteV3(ctx context.Context, input HandleInviteV3Input) (PDU, error)
 	fullEventBuilder := verImpl.NewEventBuilderFromProtoEvent(&input.InviteProtoEvent)
 	fullEvent, err := fullEventBuilder.Build(time.Now(), origin, keyID, signingKey)
 	if err != nil {
-		util.GetLogger(ctx).WithError(err).Error("failed building invite event")
+		util.Log(ctx).WithError(err).Error("failed building invite event")
 		return nil, spec.InternalServerError{}
 	}
 
@@ -163,28 +162,26 @@ func HandleInviteV3(ctx context.Context, input HandleInviteV3Input) (PDU, error)
 func handleInviteCommonChecks(ctx context.Context, input HandleInviteInput, event PDU, sender spec.UserID) (PDU, error) {
 	isKnownRoom, err := input.RoomQuerier.IsKnownRoom(ctx, input.RoomID)
 	if err != nil {
-		util.GetLogger(ctx).WithError(err).Error("failed querying known room")
+		util.Log(ctx).WithError(err).Error("failed querying known room")
 		return nil, spec.InternalServerError{}
 	}
 
 	logger := createInviteLogger(ctx, input.RoomID, sender, input.InvitedUser, event.EventID())
-	logger.WithFields(logrus.Fields{
-		"room_version":     event.Version(),
-		"room_info_exists": isKnownRoom,
-	}).Debug("processing incoming federation invite event")
+	logger.WithField("room_version", event.Version()).
+		WithField("room_info_exists", isKnownRoom).Debug("processing incoming federation invite event")
 
 	inviteState := input.StrippedState
 	if len(inviteState) == 0 {
 		inviteState, err = GenerateStrippedState(ctx, input.RoomID, input.StateQuerier)
 		if err != nil {
-			util.GetLogger(ctx).WithError(err).Error("failed generating stripped state")
+			util.Log(ctx).WithError(err).Error("failed generating stripped state")
 			return nil, spec.InternalServerError{}
 		}
 	}
 
 	if isKnownRoom {
 		if len(inviteState) == 0 {
-			util.GetLogger(ctx).WithError(err).Error("failed generating stripped state for known room")
+			util.Log(ctx).WithError(err).Error("failed generating stripped state for known room")
 			return nil, spec.InternalServerError{}
 		}
 		err := abortIfAlreadyJoined(ctx, input.RoomID, input.InvitedSenderID, input.MembershipQuerier)

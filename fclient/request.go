@@ -210,7 +210,7 @@ func VerifyHTTPRequest(
 ) (*FederationRequest, util.JSONResponse) {
 	request, err := readHTTPRequest(req)
 	if err != nil {
-		util.GetLogger(req.Context()).WithError(err).Print("Error parsing HTTP headers")
+		util.Log(req.Context()).WithError(err).Printf("Error parsing HTTP headers")
 		return nil, util.MessageResponse(400, "Bad Request")
 	}
 	if request.fields.Destination != "" {
@@ -219,7 +219,7 @@ func VerifyHTTPRequest(
 			fallthrough
 		case isLocalServerName == nil && destination != request.fields.Destination:
 			message := fmt.Sprintf("Unrecognised server name %q for Destination", request.fields.Destination)
-			util.GetLogger(req.Context()).Warn(message)
+			util.Log(req.Context()).Warn(message)
 			return nil, util.MessageResponse(400, message)
 		}
 	} else if request.fields.Destination == "" {
@@ -230,19 +230,19 @@ func VerifyHTTPRequest(
 	// So we can just serialise the request fields using the default marshaller
 	toVerify, err := json.Marshal(request.fields)
 	if err != nil {
-		util.GetLogger(req.Context()).WithError(err).Print("Error parsing JSON")
+		util.Log(req.Context()).WithError(err).Printf("Error parsing JSON")
 		return nil, util.MessageResponse(400, "Invalid JSON")
 	}
 
 	if request.Origin() == "" {
 		message := "Missing \"Authorization: X-Matrix ...\" HTTP header"
-		util.GetLogger(req.Context()).WithError(err).Print(message)
+		util.Log(req.Context()).WithError(err).Printf(message)
 		return nil, util.MessageResponse(401, message)
 	}
 	_, _, valid := spec.ParseAndValidateServerName(request.Origin())
 	if !valid {
 		message := "Invalid server name for Origin"
-		util.GetLogger(req.Context()).WithError(err).Print(message)
+		util.Log(req.Context()).WithError(err).Printf(message)
 		return nil, util.MessageResponse(400, message)
 	}
 
@@ -254,12 +254,12 @@ func VerifyHTTPRequest(
 	}})
 	if err != nil {
 		message := "Error authenticating request"
-		util.GetLogger(req.Context()).WithError(err).Print(message)
+		util.Log(req.Context()).WithError(err).Printf(message)
 		return nil, util.MessageResponse(500, message)
 	}
 	if results[0].Error != nil {
 		message := "Invalid request signature"
-		util.GetLogger(req.Context()).WithError(results[0].Error).Print(message)
+		util.Log(req.Context()).WithError(results[0].Error).Printf(message)
 		return nil, util.MessageResponse(401, message)
 	}
 
