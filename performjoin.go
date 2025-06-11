@@ -5,10 +5,10 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
+	"github.com/pitabwire/util"
 	"time"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
-	"github.com/sirupsen/logrus"
 )
 
 type PerformJoinInput struct {
@@ -283,7 +283,7 @@ func PerformJoin(
 		event, err = event.SetUnsigned(input.Unsigned)
 		if err != nil {
 			// non-fatal, log and continue
-			logrus.WithError(err).Errorf("Failed to set unsigned content")
+			util.Log(ctx).WithError(err).Error("Failed to set unsigned content")
 		}
 	}
 
@@ -300,6 +300,8 @@ func storeMXIDMappings(
 	keyRing JSONVerifier,
 	storeSenderID spec.StoreSenderIDFromPublicID,
 ) error {
+
+	log := util.Log(ctx)
 	for _, ev := range events {
 		if ev.Type() != spec.MRoomMember {
 			continue
@@ -310,11 +312,11 @@ func storeMXIDMappings(
 		}
 		// we already validated it is a valid roomversion, so this should be safe to use.
 		verImpl := MustGetRoomVersion(ev.Version())
-		if err := validateMXIDMappingSignatures(ctx, ev, *mapping, keyRing, verImpl); err != nil {
-			logrus.WithError(err).Error("invalid signature for mxid_mapping")
+		if err = validateMXIDMappingSignatures(ctx, ev, *mapping, keyRing, verImpl); err != nil {
+			log.WithError(err).Error("invalid signature for mxid_mapping")
 			continue
 		}
-		if err := storeSenderID(ctx, ev.SenderID(), mapping.UserID, roomID); err != nil {
+		if err = storeSenderID(ctx, ev.SenderID(), mapping.UserID, roomID); err != nil {
 			return err
 		}
 	}

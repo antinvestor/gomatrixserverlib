@@ -3,10 +3,8 @@ package gomatrixserverlib
 import (
 	"context"
 	"fmt"
-
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/pitabwire/util"
-	"github.com/sirupsen/logrus"
 )
 
 // StateProvider is capable of returning the room state at any point in time.
@@ -232,7 +230,7 @@ func CheckStateResponse(
 	ctx context.Context, r StateResponse, roomVersion RoomVersion,
 	keyRing JSONVerifier, missingAuth EventProvider, userIDForSender spec.UserIDForSender,
 ) ([]PDU, []PDU, error) {
-	logger := util.Log(ctx)
+	log := util.Log(ctx)
 	authEvents := r.GetAuthEvents().UntrustedEvents(roomVersion)
 	stateEvents := r.GetStateEvents().UntrustedEvents(roomVersion)
 	var allEvents []PDU
@@ -260,7 +258,7 @@ func CheckStateResponse(
 	}
 
 	// Check if the events pass signature checks.
-	logger.WithField("event count", len(allEvents)).Info("Checking event signatures for events of room state")
+	log.WithField("event count", len(allEvents)).Info("Checking event signatures for events of room state")
 	errors := VerifyAllEventSignatures(ctx, allEvents, keyRing, userIDForSender)
 	if len(errors) != len(allEvents) {
 		return nil, nil, fmt.Errorf("expected %d errors but got %d", len(allEvents), len(errors))
@@ -270,7 +268,7 @@ func CheckStateResponse(
 	failures := map[string]error{}
 	for i, e := range allEvents {
 		if errors[i] != nil {
-			logrus.WithError(errors[i]).Warnf("Signature validation failed for event %q", e.EventID())
+			log.WithError(errors[i]).WithField("event id", e.EventID()).Warn("Signature validation failed for event ")
 			failures[e.EventID()] = errors[i]
 		}
 	}
@@ -286,7 +284,7 @@ func CheckStateResponse(
 	// Check whether the events are allowed by the auth rules.
 	for _, event := range allEvents {
 		if err := checkAllowedByAuthEvents(ctx, event, eventsByID, missingAuth, userIDForSender); err != nil {
-			logrus.WithError(err).Warnf("Event %q is not allowed by its auth events", event.EventID())
+			log.WithError(err).WithField("event id", event.EventID()).Warn("Event not allowed by its auth events")
 			failures[event.EventID()] = err
 		}
 	}
@@ -294,7 +292,7 @@ func CheckStateResponse(
 	// For all of the events that weren't verified, remove them
 	// from the RespState. This way they won't be passed onwards.
 	if f := len(failures); f > 0 {
-		logger.WithField("failure count", f).Warn("Discarding auth/state event(s) due to invalid signatures")
+		log.WithField("failure count", f).Warn("Discarding auth/state event(s) due to invalid signatures")
 
 		for i := 0; i < len(authEvents); i++ {
 			if _, ok := failures[authEvents[i].EventID()]; ok {
