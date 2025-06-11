@@ -35,11 +35,11 @@ type EventBuilder struct {
 	// The create event has a depth of 1.
 	Depth int64 `json:"depth"`
 	// The JSON object for "signatures" key of the event.
-	Signature spec.RawJSON `json:"signatures,omitempty"`
+	Signature json.RawMessage `json:"signatures,omitempty"`
 	// The JSON object for "content" key of the event.
-	Content spec.RawJSON `json:"content"`
+	Content json.RawMessage `json:"content"`
 	// The JSON object for the "unsigned" key
-	Unsigned spec.RawJSON `json:"unsigned,omitempty"`
+	Unsigned json.RawMessage `json:"unsigned,omitempty"`
 
 	// private: forces the user to go through NewEventBuilder
 	version IRoomVersion

@@ -74,7 +74,7 @@ func TestHandleInvite(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	stateKey := userID.String()
-	eb := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	eb := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	inviteEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
@@ -87,8 +87,8 @@ func TestHandleInvite(t *testing.T) {
 		PrevEvents: []interface{}{},
 		AuthEvents: []interface{}{},
 		Depth:      0,
-		Content:    spec.RawJSON(`{"creator":"@user:server","m.federate":true,"room_version":"10"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"creator":"@user:server","m.federate":true,"room_version":"10"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := createEB.Build(time.Now(), userID.Domain(), keyID, sk)
 	if err != nil {
@@ -456,7 +456,7 @@ func TestHandleInviteV3(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	assert.Nil(t, err)
 
 	stateKey = ""
@@ -468,8 +468,8 @@ func TestHandleInviteV3(t *testing.T) {
 		PrevEvents: []interface{}{},
 		AuthEvents: []interface{}{},
 		Depth:      0,
-		Content:    spec.RawJSON(`{"creator":"@user:server","m.federate":true,"room_version":"10"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"creator":"@user:server","m.federate":true,"room_version":"10"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := createEB.Build(time.Now(), userID.Domain(), keyID, sk)
 	if err != nil {

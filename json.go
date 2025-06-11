@@ -17,17 +17,17 @@ package gomatrixserverlib
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
 
-	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/tidwall/gjson"
 )
 
-type EventJSONs []spec.RawJSON
+type EventJSONs []json.RawMessage
 
 func (e EventJSONs) TrustedEvents(roomVersion RoomVersion, redacted bool) []PDU {
 	verImpl, err := GetRoomVersion(roomVersion)

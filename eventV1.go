@@ -178,7 +178,7 @@ func (e *eventV1) Unsigned() []byte {
 }
 
 func (e *eventV1) SetUnsigned(unsigned interface{}) (PDU, error) {
-	var eventAsMap map[string]spec.RawJSON
+	var eventAsMap map[string]json.RawMessage
 	var err error
 	if err = json.Unmarshal(e.eventJSON, &eventAsMap); err != nil {
 		return nil, err

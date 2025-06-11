@@ -2,6 +2,7 @@ package gomatrixserverlib
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -34,8 +35,8 @@ func TestHandleMakeLeave(t *testing.T) {
 		PrevEvents: []interface{}{},
 		AuthEvents: []interface{}{},
 		Depth:      0,
-		Content:    spec.RawJSON(`{"creator":"@user:local","m.federate":true,"room_version":"10"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"creator":"@user:local","m.federate":true,"room_version":"10"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -51,8 +52,8 @@ func TestHandleMakeLeave(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      1,
-		Content:    spec.RawJSON(`{"join_rule":"public"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"join_rule":"public"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinRulesEvent, err := joinRulesEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -68,8 +69,8 @@ func TestHandleMakeLeave(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      2,
-		Content:    spec.RawJSON(`{"users":{"@joined:local":100}}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"users":{"@joined:local":100}}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	powerLevelsEvent, err := powerLevelsEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -85,8 +86,8 @@ func TestHandleMakeLeave(t *testing.T) {
 		PrevEvents: []interface{}{powerLevelsEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID(), joinRulesEvent.EventID(), powerLevelsEvent.EventID()},
 		Depth:      3,
-		Content:    spec.RawJSON(`{"membership":"join"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"membership":"join"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinEvent, err := joinEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -102,8 +103,8 @@ func TestHandleMakeLeave(t *testing.T) {
 		PrevEvents: []interface{}{powerLevelsEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID(), joinRulesEvent.EventID(), powerLevelsEvent.EventID()},
 		Depth:      3,
-		Content:    spec.RawJSON(`{"membership":"leave"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"membership":"leave"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	leaveEvent, err := leaveEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {

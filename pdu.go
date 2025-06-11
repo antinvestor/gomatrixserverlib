@@ -86,7 +86,7 @@ type eventReference struct {
 
 // UnmarshalJSON implements json.Unmarshaller
 func (er *eventReference) UnmarshalJSON(data []byte) error {
-	var tuple []spec.RawJSON
+	var tuple []json.RawMessage
 	if err := json.Unmarshal(data, &tuple); err != nil {
 		return err
 	}

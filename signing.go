@@ -35,7 +35,7 @@ type KeyID string
 func SignJSON(signingName string, keyID KeyID, privateKey ed25519.PrivateKey, message []byte) (signed []byte, err error) {
 	preserve := struct {
 		Signatures map[string]map[KeyID]spec.Base64Bytes `json:"signatures"`
-		Unsigned   spec.RawJSON                          `json:"unsigned"`
+		Unsigned   json.RawMessage                       `json:"unsigned"`
 	}{
 		Signatures: map[string]map[KeyID]spec.Base64Bytes{},
 	}

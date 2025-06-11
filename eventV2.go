@@ -36,7 +36,7 @@ func (e *eventV2) MarshalJSON() ([]byte, error) {
 }
 
 func (e *eventV2) SetUnsigned(unsigned interface{}) (PDU, error) {
-	var eventAsMap map[string]spec.RawJSON
+	var eventAsMap map[string]json.RawMessage
 	var err error
 	if err = json.Unmarshal(e.eventJSON, &eventAsMap); err != nil {
 		return nil, err

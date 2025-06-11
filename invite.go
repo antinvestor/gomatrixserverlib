@@ -49,10 +49,10 @@ type FederatedInviteClient interface {
 // events that allow the invited server to identify the room.
 type InviteStrippedState struct {
 	fields struct {
-		Content  spec.RawJSON `json:"content"`
-		StateKey *string      `json:"state_key"`
-		Type     string       `json:"type"`
-		SenderID string       `json:"sender"`
+		Content  json.RawMessage `json:"content"`
+		StateKey *string         `json:"state_key"`
+		Type     string          `json:"type"`
+		SenderID string          `json:"sender"`
 	}
 }
 
@@ -77,7 +77,7 @@ func (i *InviteStrippedState) UnmarshalJSON(data []byte) error {
 }
 
 // Content returns the content of the stripped state.
-func (i *InviteStrippedState) Content() spec.RawJSON {
+func (i *InviteStrippedState) Content() json.RawMessage {
 	return i.fields.Content
 }
 

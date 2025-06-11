@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/antinvestor/gomatrixserverlib"
-	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 func TestMarshalInviteV3Request(t *testing.T) {
@@ -18,8 +17,8 @@ func TestMarshalInviteV3Request(t *testing.T) {
 	prevEvents := []string{"upCsBqUhNUgT2/+zkzg8TbqdQpWWKQnZpGJc6KcbUC4"}
 	authEvents := []string{"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY", "X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko", "k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno"}
 	depth := int64(7)
-	signatures := spec.RawJSON(`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`)
-	content := spec.RawJSON(`{"name":"test3"}`)
+	signatures := json.RawMessage(`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`)
+	content := json.RawMessage(`{"name":"test3"}`)
 
 	output := gomatrixserverlib.ProtoEvent{
 		SenderID:   senderID,

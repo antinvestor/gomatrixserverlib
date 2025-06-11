@@ -91,7 +91,7 @@ func (q *TestEventQuerier) GetLatestEventsTest(ctx context.Context, roomID spec.
 	}, nil
 }
 
-func createMemberProtoEvent(sender string, roomID string, stateKey *string, content spec.RawJSON) ProtoEvent {
+func createMemberProtoEvent(sender string, roomID string, stateKey *string, content json.RawMessage) ProtoEvent {
 	return ProtoEvent{
 		SenderID:   sender,
 		RoomID:     roomID,
@@ -101,7 +101,7 @@ func createMemberProtoEvent(sender string, roomID string, stateKey *string, cont
 		AuthEvents: []interface{}{},
 		Depth:      0,
 		Content:    content,
-		Unsigned:   spec.RawJSON(""),
+		Unsigned:   json.RawMessage(""),
 	}
 }
 
@@ -120,13 +120,13 @@ func TestPerformInvite(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := inviteeID.String()
-	inviteEvent := createMemberProtoEvent(inviterID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(inviterID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 
 	stateKey = inviteeIDRemote.String()
-	inviteEventRemote := createMemberProtoEvent(inviterID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEventRemote := createMemberProtoEvent(inviterID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 
 	stateKey = inviterID.String()
-	inviterMemberEventEB := createMemberEventBuilder(RoomVersionV10, inviterID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join"}`))
+	inviterMemberEventEB := createMemberEventBuilder(RoomVersionV10, inviterID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join"}`))
 	inviterMemberEvent, err := inviterMemberEventEB.Build(time.Now(), inviteeID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
@@ -139,8 +139,8 @@ func TestPerformInvite(t *testing.T) {
 		PrevEvents: []interface{}{},
 		AuthEvents: []interface{}{},
 		Depth:      0,
-		Content:    spec.RawJSON(`{"creator":"@inviter:server","m.federate":true,"room_version":"10"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"creator":"@inviter:server","m.federate":true,"room_version":"10"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := createEventEB.Build(time.Now(), inviterID.Domain(), keyID, sk)
 	if err != nil {
@@ -355,7 +355,7 @@ func TestPerformInviteNilMembershipQuerier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
@@ -390,7 +390,7 @@ func TestPerformInviteNilStateQuerier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
@@ -425,7 +425,7 @@ func TestPerformInviteNilUserIDQuerier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
@@ -460,7 +460,7 @@ func TestPerformInviteNilSenderIDQuerier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
@@ -495,7 +495,7 @@ func TestPerformInviteNilSenderIDCreator(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
@@ -530,7 +530,7 @@ func TestPerformInviteNilEventQuerier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 
 	assert.Panics(t, func() {
 		_, _ = PerformInvite(context.Background(), PerformInviteInput{
@@ -564,7 +564,7 @@ func TestPerformInviteNilContext(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
@@ -607,10 +607,10 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := inviteeID.String()
-	inviteEvent := createMemberProtoEvent(inviterPseudoID, validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(inviterPseudoID, validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 
 	stateKey = inviteeIDRemote.String()
-	inviteEventRemote := createMemberProtoEvent(inviterPseudoID, validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"invite"}`))
+	inviteEventRemote := createMemberProtoEvent(inviterPseudoID, validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
 
 	rv := RoomVersionPseudoIDs
 	federate := true
@@ -628,7 +628,7 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 		AuthEvents: []interface{}{},
 		Depth:      1,
 		Content:    crBytes,
-		Unsigned:   spec.RawJSON(""),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := createEventEB.Build(time.Now(), spec.ServerName(inviterPseudoID), "ed25519:1", inviterKey)
 	if err != nil {
@@ -652,7 +652,7 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      2,
 		Content:    contentBytes,
-		Unsigned:   spec.RawJSON(""),
+		Unsigned:   json.RawMessage(""),
 	})
 	inviterJoinEvent, err := inviterJoinEB.Build(time.Now(), spec.ServerName(inviterPseudoID), "ed25519:1", inviterKey)
 	if err != nil {

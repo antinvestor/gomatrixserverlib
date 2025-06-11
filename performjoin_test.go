@@ -45,7 +45,7 @@ func (t *TestSendJoinResponse) GetOrigin() spec.ServerName {
 	return "server"
 }
 
-func (t *TestSendJoinResponse) GetJoinEvent() spec.RawJSON {
+func (t *TestSendJoinResponse) GetJoinEvent() json.RawMessage {
 	return t.joinEvent.JSON()
 }
 
@@ -141,8 +141,8 @@ func TestPerformJoin(t *testing.T) {
 		PrevEvents: []interface{}{},
 		AuthEvents: []interface{}{},
 		Depth:      0,
-		Content:    spec.RawJSON(`{"creator":"@user:server","m.federate":true,"room_version":"10"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"creator":"@user:server","m.federate":true,"room_version":"10"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
 	if err != nil {
@@ -158,8 +158,8 @@ func TestPerformJoin(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      1,
-		Content:    spec.RawJSON(`{"membership":"join"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"membership":"join"}`),
+		Unsigned:   json.RawMessage(""),
 	}
 	joinEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&joinProto)
 	joinEvent, err := joinEB.Build(time.Now(), userID.Domain(), keyID, sk)
@@ -350,7 +350,7 @@ func TestPerformJoinPseudoID(t *testing.T) {
 		AuthEvents: []interface{}{},
 		Depth:      1,
 		Content:    crBytes,
-		Unsigned:   spec.RawJSON(""),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), spec.ServerName(pseudoID), "ed25519:1", userPriv)
 	if err != nil {
@@ -367,7 +367,7 @@ func TestPerformJoinPseudoID(t *testing.T) {
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      2,
 		Content:    contentBytes,
-		Unsigned:   spec.RawJSON(""),
+		Unsigned:   json.RawMessage(""),
 	}
 	joinEB := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&joinProto)
 	joinEvent, err := joinEB.Build(time.Now(), spec.ServerName(spec.SenderIDFromPseudoIDKey(sk)), "ed25519:1", sk)

@@ -18,8 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
-
-	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
 const TestInviteV2ExampleEvent = `{"_room_version":"1","auth_events":[["$oXL79cT7fFxR7dPH:localhost",{"sha256":"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY"}],["$IVUsaSkm1LBAZYYh:localhost",{"sha256":"X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko"}],["$VS2QT0EeArZYi8wf:localhost",{"sha256":"k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno"}]],"content":{"name":"test3"},"depth":7,"event_id":"$yvN1b43rlmcOs5fY:localhost","hashes":{"sha256":"Oh1mwI1jEqZ3tgJ+V1Dmu5nOEGpCE4RFUqyJv2gQXKs"},"origin":"localhost","origin_server_ts":1510854416361,"prev_events":[["$FqI6TVvWpcbcnJ97:localhost",{"sha256":"upCsBqUhNUgT2/+zkzg8TbqdQpWWKQnZpGJc6KcbUC4"}]],"prev_state":[],"room_id":"!19Mp0U9hjajeIiw1:localhost","sender":"@test:localhost","signatures":{"localhost":{"ed25519:u9kP":"5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}},"state_key":"","type":"m.room.name"}`
@@ -55,8 +53,8 @@ func TestEmptyUnsignedFieldIsSetForProtoEvent(t *testing.T) {
 	prevEvents := []string{"upCsBqUhNUgT2/+zkzg8TbqdQpWWKQnZpGJc6KcbUC4"}
 	authEvents := []string{"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY", "X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko", "k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno"}
 	depth := int64(7)
-	signatures := spec.RawJSON(`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`)
-	content := spec.RawJSON(`{"name":"test3"}`)
+	signatures := json.RawMessage(`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`)
+	content := json.RawMessage(`{"name":"test3"}`)
 
 	output := ProtoEvent{
 		SenderID:   senderID,

@@ -1,12 +1,12 @@
 package gomatrixserverlib
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ed25519"
 )
@@ -31,8 +31,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     "@invalid:room",
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr: assert.Error,
 		},
@@ -43,8 +43,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON(fmt.Sprintf(`{"data":"%s"}`, strings.Repeat("x", maxEventLength))),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage(fmt.Sprintf(`{"data":"%s"}`, strings.Repeat("x", maxEventLength))),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr: assert.Error,
 		},
@@ -55,8 +55,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr: assert.Error,
 		},
@@ -67,8 +67,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -78,8 +78,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr:         assert.Error,
 			wantPersistable: true,
@@ -92,8 +92,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr:         assert.Error,
 			wantPersistable: true,
@@ -106,8 +106,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr:         assert.Error,
 			wantPersistable: false,
@@ -120,8 +120,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr:         assert.Error,
 			wantPersistable: true,
@@ -134,8 +134,8 @@ func TestCheckFields(t *testing.T) {
 				RoomID:     roomID,
 				PrevEvents: []string{},
 				AuthEvents: []string{},
-				Content:    spec.RawJSON("{}"),
-				Unsigned:   spec.RawJSON("{}"),
+				Content:    json.RawMessage("{}"),
+				Unsigned:   json.RawMessage("{}"),
 			},
 			wantErr:         assert.Error,
 			wantPersistable: false,

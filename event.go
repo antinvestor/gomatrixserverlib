@@ -16,6 +16,7 @@
 package gomatrixserverlib
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -40,15 +41,15 @@ func (e EventValidationError) Error() string {
 }
 
 type eventFields struct {
-	RoomID         string         `json:"room_id"`
-	SenderID       string         `json:"sender"`
-	Type           string         `json:"type"`
-	StateKey       *string        `json:"state_key"`
-	Content        spec.RawJSON   `json:"content"`
-	Redacts        string         `json:"redacts"`
-	Depth          int64          `json:"depth"`
-	Unsigned       spec.RawJSON   `json:"unsigned,omitempty"`
-	OriginServerTS spec.Timestamp `json:"origin_server_ts"`
+	RoomID         string          `json:"room_id"`
+	SenderID       string          `json:"sender"`
+	Type           string          `json:"type"`
+	StateKey       *string         `json:"state_key"`
+	Content        json.RawMessage `json:"content"`
+	Redacts        string          `json:"redacts"`
+	Depth          int64           `json:"depth"`
+	Unsigned       json.RawMessage `json:"unsigned,omitempty"`
+	OriginServerTS spec.Timestamp  `json:"origin_server_ts"`
 	//Origin         spec.ServerName `json:"origin"`
 }
 

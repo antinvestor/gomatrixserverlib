@@ -251,7 +251,7 @@ func checkRestrictedJoin(
 		// The user is in the room, so now we will need to authorise the
 		// join using the user ID of one of our own users in the room. Pick
 		// one.
-		if err != nil || len(targetRoomInfo.JoinedUsers) == 0 {
+		if len(targetRoomInfo.JoinedUsers) == 0 {
 			// There should always be more than one join event at this point
 			// because we are gated behind GetLocalServerInRoom, but y'know,
 			// sometimes strange things happen.
@@ -297,7 +297,7 @@ type HandleSendJoinInput struct {
 	Context                   context.Context
 	RoomID                    spec.RoomID
 	EventID                   string
-	JoinEvent                 spec.RawJSON
+	JoinEvent                 json.RawMessage
 	RoomVersion               RoomVersion     // The room version for the room being joined
 	RequestOrigin             spec.ServerName // The server that sent the /make_join federation request
 	LocalServerName           spec.ServerName // The name of this local server

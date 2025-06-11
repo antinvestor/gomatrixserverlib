@@ -125,8 +125,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{},
 		AuthEvents: []interface{}{},
 		Depth:      0,
-		Content:    spec.RawJSON(`{"creator":"@user:local","m.federate":true,"room_version":"10"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"creator":"@user:local","m.federate":true,"room_version":"10"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -142,8 +142,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      1,
-		Content:    spec.RawJSON(`{"join_rule":"public"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"join_rule":"public"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinRulesEvent, err := joinRulesEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -159,8 +159,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      1,
-		Content:    spec.RawJSON(`{"join_rule":"private"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"join_rule":"private"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinRulesPrivateEvent, err := joinRulesPrivateEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -176,8 +176,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      1,
-		Content:    spec.RawJSON(`{"join_rule":"restricted","allow":[{"room_id":"!allowed:local","type":"m.room_membership"}]}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"join_rule":"restricted","allow":[{"room_id":"!allowed:local","type":"m.room_membership"}]}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinRulesRestrictedEvent, err := joinRulesRestrictedEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -193,8 +193,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{createEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID()},
 		Depth:      2,
-		Content:    spec.RawJSON(`{"users":{"@joined:local":100}}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"users":{"@joined:local":100}}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	powerLevelsEvent, err := powerLevelsEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -210,8 +210,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{powerLevelsEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID(), joinRulesEvent.EventID(), powerLevelsEvent.EventID()},
 		Depth:      3,
-		Content:    spec.RawJSON(`{"membership":"join"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"membership":"join"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinEvent, err := joinEB.Build(time.Now(), validUser.Domain(), keyID, sk)
 	if err != nil {
@@ -227,8 +227,8 @@ func TestHandleMakeJoin(t *testing.T) {
 		PrevEvents: []interface{}{powerLevelsEvent.EventID()},
 		AuthEvents: []interface{}{createEvent.EventID(), joinRulesEvent.EventID(), powerLevelsEvent.EventID()},
 		Depth:      3,
-		Content:    spec.RawJSON(`{"membership":"join"}`),
-		Unsigned:   spec.RawJSON(""),
+		Content:    json.RawMessage(`{"membership":"join"}`),
+		Unsigned:   json.RawMessage(""),
 	})
 	joinedUserEvent, err := joinedUserEB.Build(time.Now(), joinedUser.Domain(), keyID, sk)
 	if err != nil {
@@ -636,7 +636,7 @@ func TestHandleMakeJoinNilContext(t *testing.T) {
 }
 
 //nolint:unparam
-func createMemberEventBuilder(roomVersion RoomVersion, sender string, roomID string, stateKey *string, content spec.RawJSON) *EventBuilder {
+func createMemberEventBuilder(roomVersion RoomVersion, sender string, roomID string, stateKey *string, content json.RawMessage) *EventBuilder {
 	return MustGetRoomVersion(roomVersion).NewEventBuilderFromProtoEvent(&ProtoEvent{
 		SenderID:   sender,
 		RoomID:     roomID,
@@ -646,7 +646,7 @@ func createMemberEventBuilder(roomVersion RoomVersion, sender string, roomID str
 		AuthEvents: []interface{}{},
 		Depth:      0,
 		Content:    content,
-		Unsigned:   spec.RawJSON(""),
+		Unsigned:   json.RawMessage(""),
 	})
 
 }
@@ -670,7 +670,7 @@ func TestHandleSendJoin(t *testing.T) {
 	badVerifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: badPK}}
 
 	stateKey := userID.String()
-	eb := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join"}`))
+	eb := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join"}`))
 	joinEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
@@ -689,29 +689,29 @@ func TestHandleSendJoin(t *testing.T) {
 	joinEventPseudoID, err := eb.Build(time.Now(), spec.ServerName(pseudoID), "ed25519:1", userPriv)
 	assert.Nil(t, err)
 
-	ebNotJoin := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"ban"}`))
+	ebNotJoin := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"ban"}`))
 	notJoinEvent, err := ebNotJoin.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
-	eb2 := createMemberEventBuilder(RoomVersionV10, "@asdf:asdf", validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join"}`))
+	eb2 := createMemberEventBuilder(RoomVersionV10, "@asdf:asdf", validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join"}`))
 	joinEventInvalidSender, err := eb2.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
 	stateKey = ""
-	eb3 := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join"}`))
+	eb3 := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join"}`))
 	joinEventNoState, err := eb3.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
 	stateKey = userID.String()
-	badAuthViaEB := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join","join_authorised_via_users_server":"baduser"}`))
+	badAuthViaEB := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join","join_authorised_via_users_server":"baduser"}`))
 	badAuthViaEvent, err := badAuthViaEB.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
-	authViaNotLocalEB := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join","join_authorised_via_users_server":"@user:notlocalserver"}`))
+	authViaNotLocalEB := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join","join_authorised_via_users_server":"@user:notlocalserver"}`))
 	authViaNotLocalEvent, err := authViaNotLocalEB.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 
-	authViaEB := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, spec.RawJSON(`{"membership":"join","join_authorised_via_users_server":"@user:local"}`))
+	authViaEB := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join","join_authorised_via_users_server":"@user:local"}`))
 	authViaEvent, err := authViaEB.Build(time.Now(), userID.Domain(), keyID, sk)
 	assert.Nil(t, err)
 

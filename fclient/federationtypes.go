@@ -273,7 +273,7 @@ type RespSendJoin struct {
 	Origin spec.ServerName `json:"origin"`
 	// The returned join event from the remote server. Used for restricted joins,
 	// but not guaranteed to be present as it's only since MSC3083.
-	Event spec.RawJSON `json:"event,omitempty"`
+	Event json.RawMessage `json:"event,omitempty"`
 	// true if the state is incomplete
 	MembersOmitted bool `json:"members_omitted"`
 	// a list of servers in the room. Only returned if partial_state is set.
@@ -292,7 +292,7 @@ func (r *RespSendJoin) GetOrigin() spec.ServerName {
 	return r.Origin
 }
 
-func (r *RespSendJoin) GetJoinEvent() spec.RawJSON {
+func (r *RespSendJoin) GetJoinEvent() json.RawMessage {
 	return r.Event
 }
 
@@ -351,7 +351,7 @@ type respSendJoinFields struct {
 	StateEvents gomatrixserverlib.EventJSONs `json:"state"`
 	AuthEvents  gomatrixserverlib.EventJSONs `json:"auth_chain"`
 	Origin      spec.ServerName              `json:"origin"`
-	Event       spec.RawJSON                 `json:"event,omitempty"`
+	Event       json.RawMessage              `json:"event,omitempty"`
 }
 
 // respSendJoinPartialStateFields extends respSendJoinFields with the fields added
@@ -393,7 +393,7 @@ type RespProfile struct {
 // RespInvite is the content of a response to PUT /_matrix/federation/v1/invite/{roomID}/{eventID}
 type RespInvite struct {
 	// The invite event signed by recipient server.
-	Event spec.RawJSON `json:"event"`
+	Event json.RawMessage `json:"event"`
 }
 
 // MarshalJSON implements json.Marshaller
@@ -421,13 +421,13 @@ func (r *RespInvite) UnmarshalJSON(data []byte) error {
 }
 
 type respInviteFields struct {
-	Event spec.RawJSON `json:"event"`
+	Event json.RawMessage `json:"event"`
 }
 
 // RespInvite is the content of a response to PUT /_matrix/federation/v2/invite/{roomID}/{eventID}
 type RespInviteV2 struct {
 	// The invite event signed by recipient server.
-	Event spec.RawJSON `json:"event"`
+	Event json.RawMessage `json:"event"`
 }
 
 // RespClaimKeys is the response for https://matrix.org/docs/spec/server_server/latest#post-matrix-federation-v1-user-keys-claim

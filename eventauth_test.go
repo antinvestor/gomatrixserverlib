@@ -55,7 +55,7 @@ func stateNeededEquals(a, b StateNeeded) bool {
 type testEventList []PDU
 
 func (tel *testEventList) UnmarshalJSON(data []byte) error {
-	var eventJSONs []spec.RawJSON
+	var eventJSONs []json.RawMessage
 	var events []PDU
 	if err := json.Unmarshal(data, &eventJSONs); err != nil {
 		return err
@@ -1019,7 +1019,7 @@ func TestRedactAllowed(t *testing.T) {
 }
 
 func TestAuthEvents(t *testing.T) {
-	power, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	power, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.power_levels",
 		"state_key": "",
 		"sender": "@u1:a",
@@ -1040,7 +1040,7 @@ func TestAuthEvents(t *testing.T) {
 	if e, err = a.PowerLevels(); err != nil || e != power {
 		t.Errorf("TestAuthEvents: failed to get same power_levels event")
 	}
-	create, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	create, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.create",
 		"state_key": "",
 		"sender": "@u1:a",
@@ -1104,7 +1104,7 @@ var powerLevelTestRoom = &testAuthEvents{
 func TestDemoteUserDefaultPowerLevelBelowOwn(t *testing.T) {
 	// User should be able to demote the user default level
 	// below their own effective level.
-	powerChangeShouldSucceed, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	powerChangeShouldSucceed, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.power_levels",
 		"state_key": "",
 		"sender": "@u1:a",
@@ -1175,7 +1175,7 @@ var nilPowerLevelTestRoom = &testAuthEvents{
 }
 
 func TestPowerLevelCheckShouldNotPanic(t *testing.T) {
-	powerChangeBadUser, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	powerChangeBadUser, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.power_levels",
 		"state_key": "",
 		"sender": "@u1:a",
@@ -1198,7 +1198,7 @@ func TestPowerLevelCheckShouldNotPanic(t *testing.T) {
 		}
 	}, "")
 
-	powerChange, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	powerChange, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.power_levels",
 		"state_key": "",
 		"sender": "@u1:a",
@@ -1225,7 +1225,7 @@ func TestPowerLevelCheckShouldNotPanic(t *testing.T) {
 func TestPromoteUserDefaultLevelAboveOwn(t *testing.T) {
 	// User shouldn't be able to promote the user default
 	// level above their own effective level.
-	powerChangeShouldFail, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	powerChangeShouldFail, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.power_levels",
 		"state_key": "",
 		"sender": "@u2:a",
@@ -1299,7 +1299,7 @@ var negativePowerLevelTestRoom = &testAuthEvents{
 func TestNegativePowerLevels(t *testing.T) {
 	// User should be able to demote the user default level
 	// below their own effective level.
-	eventShouldSucceed, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(spec.RawJSON(`{
+	eventShouldSucceed, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.message",
 		"sender": "@u1:a",
 		"room_id": "!r1:a",
