@@ -111,12 +111,10 @@ func (db *joinKeyDatabase) FetchKeys(
 			if err != nil {
 				return nil, err
 			}
-			validUntil := spec.Timestamp(time.Now().Add(time.Hour).Unix() * 1000)
-			notExpired := PublicKeyNotExpired
 			results[req] = PublicKeyLookupResult{
 				VerifyKey:    vk,
-				ValidUntilTS: &validUntil,
-				ExpiredTS:    &notExpired,
+				ValidUntilTS: spec.Timestamp(time.Now().Add(time.Hour).Unix() * 1000),
+				ExpiredTS:    PublicKeyNotExpired,
 			}
 		}
 	}

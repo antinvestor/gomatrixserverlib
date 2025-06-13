@@ -64,12 +64,10 @@ func (db *testKeyDatabase) FetchKeys(
 			if err != nil {
 				return nil, err
 			}
-			notValid := PublicKeyNotValid
-			expiredTS := spec.Timestamp(929059200)
 			results[req] = PublicKeyLookupResult{
 				VerifyKey:    vk,
-				ValidUntilTS: &notValid,
-				ExpiredTS:    &expiredTS,
+				ValidUntilTS: PublicKeyNotValid,
+				ExpiredTS:    929059200,
 			}
 		}
 
@@ -79,12 +77,10 @@ func (db *testKeyDatabase) FetchKeys(
 			if err != nil {
 				return nil, err
 			}
-			validUntil := spec.Timestamp(22493142432964)
-			notExpired := PublicKeyNotExpired
 			results[req] = PublicKeyLookupResult{
 				VerifyKey:    vk,
-				ValidUntilTS: &validUntil,
-				ExpiredTS:    &notExpired,
+				ValidUntilTS: 22493142432964,
+				ExpiredTS:    PublicKeyNotExpired,
 			}
 		}
 
@@ -94,12 +90,10 @@ func (db *testKeyDatabase) FetchKeys(
 			if err != nil {
 				return nil, err
 			}
-			validUntil := spec.Timestamp(1591068446195)
-			notExpired := PublicKeyNotExpired
 			results[req] = PublicKeyLookupResult{
 				VerifyKey:    vk,
-				ValidUntilTS: &validUntil,
-				ExpiredTS:    &notExpired,
+				ValidUntilTS: 1591068446195,
+				ExpiredTS:    PublicKeyNotExpired,
 			}
 		}
 	}
@@ -151,11 +145,9 @@ func TestStrictCheckingKeyValidity(t *testing.T) {
 	// than seven days in the future. Start by creating a
 	// key timestamp which is 14 days in the future.
 	// https://matrix.org/docs/spec/rooms/v5#signing-key-validity-period
-	notExpired := PublicKeyNotExpired
-	validUntil := spec.AsTimestamp(time.Now().Add(time.Hour * 24 * 14))
 	publicKeyLookup := PublicKeyLookupResult{
-		ExpiredTS:    &notExpired,
-		ValidUntilTS: &validUntil,
+		ExpiredTS:    PublicKeyNotExpired,
+		ValidUntilTS: spec.AsTimestamp(time.Now().Add(time.Hour * 24 * 14)),
 	}
 	shouldPass := spec.AsTimestamp(time.Now().Add(time.Hour * 24 * 5))
 	shouldFail := spec.AsTimestamp(time.Now().Add(time.Hour * 24 * 9))
@@ -175,9 +167,8 @@ func TestStrictCheckingKeyValidity(t *testing.T) {
 
 func TestExpiredTS(t *testing.T) {
 	// Check that we respect the ExpiredTS properly.
-	expiredTS := spec.Timestamp(1000)
 	publicKeyLookup := PublicKeyLookupResult{
-		ExpiredTS: &expiredTS,
+		ExpiredTS: 1000,
 	}
 	shouldPass := spec.Timestamp(999)
 	shouldFail := spec.Timestamp(1000)

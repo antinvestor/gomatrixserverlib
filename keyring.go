@@ -51,10 +51,10 @@ type PublicKeyLookupResult struct {
 	VerifyKey
 	// if this key has expired, the time it stopped being valid for event signing in milliseconds.
 	// if the key has not expired, the magic value PublicKeyNotExpired.
-	ExpiredTS *spec.Timestamp `json:"expired_ts"`
+	ExpiredTS spec.Timestamp `json:"expired_ts"`
 	// When this result is valid until in milliseconds.
 	// if the key has expired, the magic value PublicKeyNotValid.
-	ValidUntilTS *spec.Timestamp `json:"valid_until_ts"`
+	ValidUntilTS spec.Timestamp `json:"valid_until_ts"`
 }
 
 // SignatureValidityCheckFunc is a function used to validate signing keys.
@@ -85,13 +85,10 @@ func NoStrictValidityCheck(_, _ spec.Timestamp) bool { return true }
 // WasValidAt checks if this signing key is valid for an event signed at the
 // given timestamp.
 func (r PublicKeyLookupResult) WasValidAt(atTS spec.Timestamp, signatureValidityCheck SignatureValidityCheckFunc) bool {
-	if r.ExpiredTS != nil && *r.ExpiredTS != PublicKeyNotExpired {
-		return atTS < *r.ExpiredTS
+	if r.ExpiredTS != PublicKeyNotExpired {
+		return atTS < r.ExpiredTS
 	}
-	if r.ValidUntilTS == nil {
-		return false
-	}
-	return signatureValidityCheck(atTS, *r.ValidUntilTS)
+	return signatureValidityCheck(atTS, r.ValidUntilTS)
 }
 
 type PublicKeyNotaryLookupRequest struct {
@@ -228,7 +225,7 @@ func (k KeyRing) VerifyJSONs(
 	keysFetched := map[PublicKeyLookupRequest]PublicKeyLookupResult{}
 	now := spec.AsTimestamp(time.Now())
 	for req, res := range keysFromDatabase {
-		if res.ExpiredTS != nil && *res.ExpiredTS != PublicKeyNotExpired {
+		if res.ExpiredTS != PublicKeyNotExpired {
 			// The key is expired - it's not going to change so just return
 			// it and don't bother requesting it again.
 			keysFetched[req] = res
@@ -238,7 +235,7 @@ func (k KeyRing) VerifyJSONs(
 		// The key isn't expired so include it in the results.
 		keysFetched[req] = res
 		// If the key is inside validity then we don't need to update it.
-		if now < *res.ValidUntilTS && res.ExpiredTS == nil {
+		if now < res.ValidUntilTS {
 			delete(keyRequests, req)
 		}
 	}
@@ -508,7 +505,7 @@ func (d DirectKeyFetcher) FetcherName() string {
 func (d *DirectKeyFetcher) FetchKeys(
 	ctx context.Context, requests map[PublicKeyLookupRequest]spec.Timestamp,
 ) (map[PublicKeyLookupRequest]PublicKeyLookupResult, error) {
-	localServerRequests := []PublicKeyLookupRequest{}
+	var localServerRequests []PublicKeyLookupRequest
 	byServer := map[spec.ServerName]map[PublicKeyLookupRequest]spec.Timestamp{}
 	for req, ts := range requests {
 		if d.IsLocalServerName(req.ServerName) {
@@ -538,10 +535,10 @@ func (d *DirectKeyFetcher) FetchKeys(
 	// Populate the results map with any requests directed at the local server
 	ts := spec.AsTimestamp(time.Unix(1<<37, 0))
 	localKey := &PublicKeyLookupResult{
-		VerifyKey:    VerifyKey{Key: d.LocalPublicKey},
-		ExpiredTS:    nil,
+		VerifyKey: VerifyKey{Key: d.LocalPublicKey},
+		ExpiredTS: PublicKeyNotExpired,
 		// This must evaluate to a year which is 4 digits (ie. 2020), or the code breaks currently
-		ValidUntilTS: &ts, // NOTE: 6325-04-08 15:04:32 +0000 UTC (a date very far in the future)
+		ValidUntilTS: ts, // NOTE: 6325-04-08 15:04:32 +0000 UTC (a date very far in the future)
 	}
 	for _, req := range localServerRequests {
 		results[req] = *localKey
@@ -670,8 +667,8 @@ func mapServerKeysToPublicKeyLookupResult(
 			KeyID:      keyID,
 		}] = PublicKeyLookupResult{
 			VerifyKey:    key,
-			ValidUntilTS: &validUntil,
-			ExpiredTS:    nil,
+			ValidUntilTS: validUntil,
+			ExpiredTS:    PublicKeyNotExpired,
 		}
 	}
 	for keyID, key := range serverKeys.OldVerifyKeys {
@@ -680,9 +677,8 @@ func mapServerKeysToPublicKeyLookupResult(
 			ServerName: serverKeys.ServerName,
 			KeyID:      keyID,
 		}] = PublicKeyLookupResult{
-			VerifyKey:    key.VerifyKey,
-			ValidUntilTS: nil,
-			ExpiredTS:    &expired,
+			VerifyKey: key.VerifyKey,
+			ExpiredTS: expired,
 		}
 	}
 }
