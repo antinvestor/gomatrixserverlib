@@ -1,25 +1,25 @@
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 )
 
 func TestHandleMakeLeave(t *testing.T) {
 	validUser, err := spec.NewUserID("@user:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	joinedUser, err := spec.NewUserID("@joined:local", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -113,10 +113,10 @@ func TestHandleMakeLeave(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		input   HandleMakeLeaveInput
-		want    *HandleMakeLeaveResponse
-		wantErr assert.ErrorAssertionFunc
+		name            string
+		input           HandleMakeLeaveInput
+		want            *HandleMakeLeaveResponse
+		expectError     bool
 	}{
 		{
 			name: "wrong destination",
@@ -124,23 +124,22 @@ func TestHandleMakeLeave(t *testing.T) {
 				UserID:        *joinedUser,
 				RequestOrigin: "notLocalhost",
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "localhost not in room",
 			input: HandleMakeLeaveInput{
-				UserID:            *validUser,
-				RequestOrigin:     "remote",
+				RoomID:            *validRoom,
 				LocalServerInRoom: false,
 				UserIDQuerier:     UserIDForSenderTest,
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "template error",
 			input: HandleMakeLeaveInput{
-				RoomID:            *validRoom,
 				UserID:            *validUser,
+				RoomID:            *validRoom,
 				RequestOrigin:     "remote",
 				LocalServerInRoom: true,
 				UserIDQuerier:     UserIDForSenderTest,
@@ -148,13 +147,13 @@ func TestHandleMakeLeave(t *testing.T) {
 					return nil, nil, errors.New("error")
 				},
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "template error - no event",
 			input: HandleMakeLeaveInput{
-				RoomID:            *validRoom,
 				UserID:            *validUser,
+				RoomID:            *validRoom,
 				RequestOrigin:     "remote",
 				LocalServerInRoom: true,
 				UserIDQuerier:     UserIDForSenderTest,
@@ -162,13 +161,13 @@ func TestHandleMakeLeave(t *testing.T) {
 					return nil, nil, nil
 				},
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "template error - no state",
 			input: HandleMakeLeaveInput{
-				RoomID:            *validRoom,
 				UserID:            *validUser,
+				RoomID:            *validRoom,
 				RequestOrigin:     "remote",
 				LocalServerInRoom: true,
 				UserIDQuerier:     UserIDForSenderTest,
@@ -176,13 +175,13 @@ func TestHandleMakeLeave(t *testing.T) {
 					return joinEvent, nil, nil
 				},
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "template error - not a membership event",
 			input: HandleMakeLeaveInput{
-				RoomID:            *validRoom,
 				UserID:            *validUser,
+				RoomID:            *validRoom,
 				RequestOrigin:     "remote",
 				LocalServerInRoom: true,
 				UserIDQuerier:     UserIDForSenderTest,
@@ -190,13 +189,13 @@ func TestHandleMakeLeave(t *testing.T) {
 					return createEvent, []PDU{createEvent, joinRulesEvent}, nil
 				},
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "not allowed to leave, wrong state events",
 			input: HandleMakeLeaveInput{
-				RoomID:            *validRoom,
 				UserID:            *validUser,
+				RoomID:            *validRoom,
 				RequestOrigin:     "remote",
 				LocalServerInRoom: true,
 				UserIDQuerier:     UserIDForSenderTest,
@@ -204,12 +203,11 @@ func TestHandleMakeLeave(t *testing.T) {
 					return leaveEvent, []PDU{joinRulesEvent}, nil
 				},
 			},
-			wantErr: assert.Error,
+			expectError: true,
 		},
 		{
 			name: "allowed to leave",
 			input: HandleMakeLeaveInput{
-				RoomID:            *validRoom,
 				UserID:            *validUser,
 				RequestOrigin:     "remote",
 				LocalServerInRoom: true,
@@ -218,14 +216,17 @@ func TestHandleMakeLeave(t *testing.T) {
 					return leaveEvent, []PDU{createEvent, joinRulesEvent}, nil
 				},
 			},
-			wantErr: assert.NoError,
+			expectError: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := HandleMakeLeave(tt.input)
-			if !tt.wantErr(t, err, fmt.Sprintf("HandleMakeLeave(%v)", tt.input)) {
-				return
+			got, err := HandleMakeLeave(tt.input)
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, got, "Expected non-nil response")
 			}
 		})
 	}

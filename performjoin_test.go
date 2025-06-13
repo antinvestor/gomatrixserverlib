@@ -1,3 +1,4 @@
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -12,7 +13,7 @@ import (
 
 	"github.com/antinvestor/gomatrix"
 	"github.com/antinvestor/gomatrixserverlib/spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type TestMakeJoinResponse struct {
@@ -110,10 +111,12 @@ func (db *joinKeyDatabase) FetchKeys(
 			if err != nil {
 				return nil, err
 			}
+			validUntil := spec.Timestamp(time.Now().Add(time.Hour).Unix() * 1000)
+			notExpired := PublicKeyNotExpired
 			results[req] = PublicKeyLookupResult{
 				VerifyKey:    vk,
-				ValidUntilTS: spec.Timestamp(time.Now().Add(time.Hour).Unix() * 1000),
-				ExpiredTS:    PublicKeyNotExpired,
+				ValidUntilTS: &validUntil,
+				ExpiredTS:    &notExpired,
 			}
 		}
 	}
@@ -128,18 +131,12 @@ func (db *joinKeyDatabase) StoreKeys(
 
 func TestPerformJoin(t *testing.T) {
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	userID, err := spec.NewUserID("@user:server", true)
-	if err != nil {
-		t.Fatalf("Invalid UserID: %v", err)
-	}
+	require.NoError(t, err)
 	roomID, err := spec.NewRoomID("!room:server")
-	if err != nil {
-		t.Fatalf("Invalid RoomID: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey := ""
 	eb := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -154,9 +151,7 @@ func TestPerformJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = userID.String()
 	joinProto := ProtoEvent{
@@ -172,9 +167,7 @@ func TestPerformJoin(t *testing.T) {
 	}
 	joinEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&joinProto)
 	joinEvent, err := joinEB.Build(time.Now(), userID.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 
 	eventProvider := func(ctx context.Context, roomVer RoomVersion, eventIDs []string) ([]PDU, error) {
 		for _, eventID := range eventIDs {
@@ -354,34 +347,28 @@ func TestPerformJoin(t *testing.T) {
 
 func TestPerformJoinPseudoID(t *testing.T) {
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	userID, err := spec.NewUserID("@user:server", true)
-	if err != nil {
-		t.Fatalf("Invalid UserID: %v", err)
-	}
+	require.NoError(t, err)
 	roomID, err := spec.NewRoomID("!room:server")
-	if err != nil {
-		t.Fatalf("Invalid RoomID: %v", err)
-	}
+	require.NoError(t, err)
 
 	_, userPriv, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	pseudoID := spec.SenderIDFromPseudoIDKey(userPriv)
 
 	rv := RoomVersionPseudoIDs
 	cr := CreateContent{Creator: string(pseudoID), RoomVersion: &rv}
 	crBytes, err := json.Marshal(cr)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mapping := MXIDMapping{UserID: userID.String(), UserRoomKey: pseudoID}
 	err = mapping.Sign("server", keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	content := MemberContent{Membership: spec.Join, MXIDMapping: &mapping}
 	contentBytes, err := json.Marshal(content)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey := ""
 	eb := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -396,9 +383,7 @@ func TestPerformJoinPseudoID(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), spec.ServerName(pseudoID), "ed25519:1", userPriv)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = string(pseudoID)
 	joinProto := ProtoEvent{
@@ -414,9 +399,7 @@ func TestPerformJoinPseudoID(t *testing.T) {
 	}
 	joinEB := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&joinProto)
 	joinEvent, err := joinEB.Build(time.Now(), spec.ServerName(spec.SenderIDFromPseudoIDKey(sk)), "ed25519:1", sk)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 	eventProvider := func(ctx context.Context, roomVer RoomVersion, eventIDs []string) ([]PDU, error) {
 		var res []PDU
 		for _, eventID := range eventIDs {

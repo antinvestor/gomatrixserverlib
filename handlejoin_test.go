@@ -1,3 +1,4 @@
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -10,6 +11,7 @@ import (
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -119,18 +121,16 @@ func TestHandleMakeJoin(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validUser, err := spec.NewUserID("@user:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	joinedUser, err := spec.NewUserID("@joined:local", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	allowedRoom, err := spec.NewRoomID("!allowed:local")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := ""
@@ -146,9 +146,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := eb.Build(time.Now(), validUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = ""
 	joinRulesEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -163,9 +161,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	joinRulesEvent, err := joinRulesEB.Build(time.Now(), validUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building join_rules event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = ""
 	joinRulesPrivateEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -180,9 +176,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	joinRulesPrivateEvent, err := joinRulesPrivateEB.Build(time.Now(), validUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building private join_rules event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = ""
 	joinRulesRestrictedEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -199,9 +193,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned: json.RawMessage(""),
 	})
 	joinRulesRestrictedEvent, err := joinRulesRestrictedEB.Build(time.Now(), validUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building restricted join_rules event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = ""
 	powerLevelsEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -216,9 +208,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	powerLevelsEvent, err := powerLevelsEB.Build(time.Now(), validUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building power_levels event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = validUser.String()
 	joinEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -233,9 +223,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	joinEvent, err := joinEB.Build(time.Now(), validUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building join event: %v", err)
-	}
+	require.NoError(t, err)
 
 	stateKey = joinedUser.String()
 	joinedUserEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -250,9 +238,7 @@ func TestHandleMakeJoin(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	joinedUserEvent, err := joinedUserEB.Build(time.Now(), joinedUser.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building join event: %v", err)
-	}
+	require.NoError(t, err)
 
 	type ErrorType int
 	const (
@@ -592,8 +578,8 @@ func TestHandleMakeJoin(t *testing.T) {
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.NoError(t, err)
-				assert.NoError(t, joinErr, string(jsonBytes))
+				require.NoError(t, err)
+				require.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -603,9 +589,9 @@ func TestHandleMakeJoinNilRoomQuerier(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validUser, err := spec.NewUserID("@user:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Panics(t, func() {
 		_, _ = HandleMakeJoin(HandleMakeJoinInput{
@@ -627,9 +613,9 @@ func TestHandleMakeJoinNilUserIDQuerier(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validUser, err := spec.NewUserID("@user:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Panics(t, func() {
 		_, _ = HandleMakeJoin(HandleMakeJoinInput{
@@ -651,9 +637,9 @@ func TestHandleMakeJoinNilContext(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validUser, err := spec.NewUserID("@user:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Panics(t, func() {
 		_, _ = HandleMakeJoin(HandleMakeJoinInput{
@@ -693,18 +679,18 @@ func createMemberEventBuilder(
 
 func TestHandleSendJoin(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	remoteServer := spec.ServerName("server")
 	localServer := spec.ServerName("local")
 	validRoom, err := spec.NewRoomID("!room:server")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	badRoom, err := spec.NewRoomID("!bad:room")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	badPK, _, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 	badVerifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: badPK}}
@@ -718,22 +704,22 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"join"}`),
 	)
 	joinEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// create a pseudoID join event
 	_, userPriv, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	pseudoID := spec.SenderIDFromPseudoIDKey(userPriv)
 	stateKey = string(pseudoID)
 	mapping := MXIDMapping{UserID: userID.String(), UserRoomKey: pseudoID}
 	err = mapping.Sign(remoteServer, keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	content := MemberContent{Membership: spec.Join, MXIDMapping: &mapping}
 	contentBytes, err := json.Marshal(content)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eb = createMemberEventBuilder(RoomVersionPseudoIDs, stateKey, validRoom.String(), &stateKey, contentBytes)
 	joinEventPseudoID, err := eb.Build(time.Now(), spec.ServerName(pseudoID), "ed25519:1", userPriv)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ebNotJoin := createMemberEventBuilder(
 		RoomVersionV10,
@@ -743,7 +729,7 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"ban"}`),
 	)
 	notJoinEvent, err := ebNotJoin.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	eb2 := createMemberEventBuilder(
 		RoomVersionV10,
@@ -753,7 +739,7 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"join"}`),
 	)
 	joinEventInvalidSender, err := eb2.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = ""
 	eb3 := createMemberEventBuilder(
@@ -764,7 +750,7 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"join"}`),
 	)
 	joinEventNoState, err := eb3.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = userID.String()
 	badAuthViaEB := createMemberEventBuilder(
@@ -775,7 +761,7 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"join","join_authorised_via_users_server":"baduser"}`),
 	)
 	badAuthViaEvent, err := badAuthViaEB.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	authViaNotLocalEB := createMemberEventBuilder(
 		RoomVersionV10,
@@ -785,7 +771,7 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"join","join_authorised_via_users_server":"@user:notlocalserver"}`),
 	)
 	authViaNotLocalEvent, err := authViaNotLocalEB.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	authViaEB := createMemberEventBuilder(
 		RoomVersionV10,
@@ -795,7 +781,7 @@ func TestHandleSendJoin(t *testing.T) {
 		json.RawMessage(`{"membership":"join","join_authorised_via_users_server":"@user:local"}`),
 	)
 	authViaEvent, err := authViaEB.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	type ErrorType int
 	const (
@@ -1149,8 +1135,8 @@ func TestHandleSendJoin(t *testing.T) {
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.NoError(t, err)
-				assert.NoError(t, joinErr, string(jsonBytes))
+				require.NoError(t, err)
+				require.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -1160,12 +1146,10 @@ func TestHandleSendJoinNilVerifier(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	assert.Panics(t, func() {
@@ -1189,12 +1173,10 @@ func TestHandleSendJoinNilMembershipQuerier(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -1219,12 +1201,10 @@ func TestHandleSendJoinNilUserIDQuerier(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -1249,12 +1229,10 @@ func TestHandleSendJoinNilContext(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -1279,12 +1257,10 @@ func TestHandleSendJoinNilStoreSenderIDFromPublicID(t *testing.T) {
 	remoteServer := spec.ServerName("remote")
 	localServer := spec.ServerName("local")
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 

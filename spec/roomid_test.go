@@ -1,3 +1,4 @@
+// nolint:testpackage
 package spec_test
 
 import (

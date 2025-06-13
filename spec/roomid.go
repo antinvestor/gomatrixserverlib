@@ -20,9 +20,9 @@ func NewRoomID(id string) (*RoomID, error) {
 	return parseAndValidateRoomID(id)
 }
 
-// Returns the full roomID string including leading sigil.
-func (room RoomID) String() string {
-	return room.raw
+// String returns the full roomID string including leading sigil.
+func (r RoomID) String() string {
+	return r.raw
 }
 
 // Returns just the localpart of the roomID.

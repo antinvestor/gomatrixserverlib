@@ -33,9 +33,9 @@ func NewUserIDOrPanic(id string, allowHistoricalIDs bool) UserID {
 	return *userID
 }
 
-// Returns the full userID string including leading sigil.
-func (user *UserID) String() string {
-	return user.raw
+// String returns the full userID string including leading sigil.
+func (u *UserID) String() string {
+	return u.raw
 }
 
 // Returns just the localpart of the userID.

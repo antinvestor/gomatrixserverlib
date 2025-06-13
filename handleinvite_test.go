@@ -1,3 +1,4 @@
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -10,6 +11,7 @@ import (
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -66,14 +68,14 @@ func (r *TestStateQuerier) GetState(
 
 func TestHandleInvite(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:server")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	badRoom, err := spec.NewRoomID("!bad:room")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -86,7 +88,7 @@ func TestHandleInvite(t *testing.T) {
 		json.RawMessage(`{"membership":"invite"}`),
 	)
 	inviteEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = ""
 	createEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -101,9 +103,7 @@ func TestHandleInvite(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := createEB.Build(time.Now(), userID.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 
 	type ErrorType int
 	const (
@@ -290,8 +290,8 @@ func TestHandleInvite(t *testing.T) {
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.NoError(t, err)
-				assert.NoError(t, joinErr, string(jsonBytes))
+				require.NoError(t, err)
+				require.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -299,12 +299,10 @@ func TestHandleInvite(t *testing.T) {
 
 func TestHandleInviteNilVerifier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	assert.Panics(t, func() {
@@ -324,12 +322,10 @@ func TestHandleInviteNilVerifier(t *testing.T) {
 
 func TestHandleInviteNilRoomQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -350,12 +346,10 @@ func TestHandleInviteNilRoomQuerier(t *testing.T) {
 
 func TestHandleInviteNilMembershipQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -376,12 +370,10 @@ func TestHandleInviteNilMembershipQuerier(t *testing.T) {
 
 func TestHandleInviteNilStateQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -402,12 +394,10 @@ func TestHandleInviteNilStateQuerier(t *testing.T) {
 
 func TestHandleInviteNilUserIDQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -428,12 +418,10 @@ func TestHandleInviteNilUserIDQuerier(t *testing.T) {
 
 func TestHandleInviteNilContext(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -454,14 +442,14 @@ func TestHandleInviteNilContext(t *testing.T) {
 
 func TestHandleInviteV3(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:server")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	badRoom, err := spec.NewRoomID("!bad:room")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -472,7 +460,7 @@ func TestHandleInviteV3(t *testing.T) {
 		&stateKey,
 		json.RawMessage(`{"membership":"invite"}`),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = ""
 	createEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -487,9 +475,7 @@ func TestHandleInviteV3(t *testing.T) {
 		Unsigned:   json.RawMessage(""),
 	})
 	createEvent, err := createEB.Build(time.Now(), userID.Domain(), keyID, sk)
-	if err != nil {
-		t.Fatalf("Failed building create event: %v", err)
-	}
+	require.NoError(t, err)
 
 	type ErrorType int
 	const (
@@ -703,8 +689,8 @@ func TestHandleInviteV3(t *testing.T) {
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.NoError(t, err)
-				assert.NoError(t, joinErr, string(jsonBytes))
+				require.NoError(t, err)
+				require.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -712,12 +698,10 @@ func TestHandleInviteV3(t *testing.T) {
 
 func TestHandleInviteV3NilVerifier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	assert.Panics(t, func() {
@@ -740,12 +724,10 @@ func TestHandleInviteV3NilVerifier(t *testing.T) {
 
 func TestHandleInviteV3NilRoomQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -769,12 +751,10 @@ func TestHandleInviteV3NilRoomQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilMembershipQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -798,12 +778,10 @@ func TestHandleInviteV3NilMembershipQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilStateQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -827,12 +805,10 @@ func TestHandleInviteV3NilStateQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilUserIDQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
@@ -856,12 +832,10 @@ func TestHandleInviteV3NilUserIDQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilContext(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("Failed generating key: %v", err)
-	}
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 

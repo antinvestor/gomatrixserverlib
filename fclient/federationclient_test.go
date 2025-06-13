@@ -1,3 +1,4 @@
+// nolint:testpackage
 package fclient_test
 
 import (

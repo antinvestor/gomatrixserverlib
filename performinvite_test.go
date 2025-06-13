@@ -1,3 +1,4 @@
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -10,6 +11,7 @@ import (
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -131,16 +133,16 @@ func createMemberProtoEvent(sender string, roomID string, stateKey *string, cont
 
 func TestPerformInvite(t *testing.T) {
 	inviteeID, err := spec.NewUserID("@invitee:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	inviteeIDRemote, err := spec.NewUserID("@invitee:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	inviterID, err := spec.NewUserID("@inviter:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := inviteeID.String()
@@ -168,7 +170,7 @@ func TestPerformInvite(t *testing.T) {
 		json.RawMessage(`{"membership":"join"}`),
 	)
 	inviterMemberEvent, err := inviterMemberEventEB.Build(time.Now(), inviteeID.Domain(), keyID, sk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = ""
 	createEventEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -377,8 +379,8 @@ func TestPerformInvite(t *testing.T) {
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.NoError(t, err)
-				assert.NoError(t, joinErr, string(jsonBytes))
+				require.NoError(t, err)
+				require.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -386,12 +388,12 @@ func TestPerformInvite(t *testing.T) {
 
 func TestPerformInviteNilMembershipQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -426,12 +428,12 @@ func TestPerformInviteNilMembershipQuerier(t *testing.T) {
 
 func TestPerformInviteNilStateQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -466,12 +468,12 @@ func TestPerformInviteNilStateQuerier(t *testing.T) {
 
 func TestPerformInviteNilUserIDQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -506,12 +508,12 @@ func TestPerformInviteNilUserIDQuerier(t *testing.T) {
 
 func TestPerformInviteNilSenderIDQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -546,12 +548,12 @@ func TestPerformInviteNilSenderIDQuerier(t *testing.T) {
 
 func TestPerformInviteNilSenderIDCreator(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -586,12 +588,12 @@ func TestPerformInviteNilSenderIDCreator(t *testing.T) {
 
 func TestPerformInviteNilEventQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -625,12 +627,12 @@ func TestPerformInviteNilEventQuerier(t *testing.T) {
 
 func TestPerformInviteNilContext(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
@@ -665,19 +667,19 @@ func TestPerformInviteNilContext(t *testing.T) {
 
 func TestPerformInvitePseudoIDs(t *testing.T) {
 	inviteeID, err := spec.NewUserID("@invitee:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	inviteeIDRemote, err := spec.NewUserID("@invitee:remote", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	inviterID, err := spec.NewUserID("@inviter:server", true)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, inviterKey, err := ed25519.GenerateKey(rand.Reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	inviterPseudoID := string(spec.SenderIDFromPseudoIDKey(inviterKey))
 
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	keyID := KeyID("ed25519:1234")
 
@@ -701,7 +703,7 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 	federate := true
 	cr := CreateContent{Creator: inviterPseudoID, RoomVersion: &rv, Federate: &federate}
 	crBytes, err := json.Marshal(cr)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = ""
 	createEventEB := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -722,10 +724,10 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 
 	mapping := MXIDMapping{UserID: inviterID.String(), UserRoomKey: spec.SenderID(inviterPseudoID)}
 	err = mapping.Sign("server", keyID, inviterKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	content := MemberContent{Membership: spec.Join, MXIDMapping: &mapping}
 	contentBytes, err := json.Marshal(content)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateKey = inviterPseudoID
 	inviterJoinEB := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -954,8 +956,8 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.NoError(t, err)
-				assert.NoError(t, joinErr, string(jsonBytes))
+				require.NoError(t, err)
+				require.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}

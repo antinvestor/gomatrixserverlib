@@ -1,3 +1,4 @@
+// nolint:testpackage
 /* Copyright 2016-2017 Vector Creations Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,7 @@
  * limitations under the License.
  */
 
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -23,7 +25,7 @@ import (
 	"time"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -86,13 +88,9 @@ func TestStrictPowerLevelContent(t *testing.T) {
 	// room version.
 	eventJSON := `{"content":{"ban":50,"events":{"m.room.avatar":50,"m.room.canonical_alias":50,"m.room.encryption":100,"m.room.history_visibility":100,"m.room.name":50,"m.room.power_levels":100,"m.room.server_acl":100,"m.room.tombstone":100},"events_default":0,"historical":100,"invite":0,"kick":50,"redact":50,"state_default":50,"users":{"@neilalexander:matrix.org":"100"},"users_default":0},"origin_server_ts":1643017369993,"sender":"@neilalexander:matrix.org","state_key":"","type":"m.room.power_levels","unsigned":{"age":592},"event_id":"$2CT2RSF8B4XJyysh7i6Zdw0oYSs53JkIhTMrapIVYnw","room_id":"!CeUyQRqMxuBnjcxiIr:matrix.org"}`
 	goodEvent, err := MustGetRoomVersion(RoomVersionV7).NewEventFromTrustedJSON([]byte(eventJSON), false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	badEvent, err := MustGetRoomVersion("org.matrix.msc3667").NewEventFromTrustedJSON([]byte(eventJSON), false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	if _, err := goodEvent.PowerLevels(); err != nil {
 		t.Fatalf("good content should not have errored but did: %s", err)
 	}
@@ -185,12 +183,12 @@ func TestMXIDMapping_SignValidate(t *testing.T) {
 	serverName := spec.ServerName("localhost")
 
 	_, userPriv, err := ed25519.GenerateKey(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	userRoomKey := spec.SenderIDFromPseudoIDKey(userPriv)
 
 	_, priv, err := ed25519.GenerateKey(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mapping := MXIDMapping{
 		UserRoomKey: userRoomKey,
@@ -198,39 +196,39 @@ func TestMXIDMapping_SignValidate(t *testing.T) {
 	}
 
 	err = mapping.Sign(serverName, keyID, priv)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = json.Marshal(mapping)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// now validate the signed mapping
 	verImpl := MustGetRoomVersion(RoomVersionPseudoIDs)
 	eb := verImpl.NewEventBuilder()
 	err = eb.SetContent(MemberContent{MXIDMapping: &mapping})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	eb.SenderID = mapping.UserID
 	eb.RoomID = "!1:localhost"
 	ev, err := eb.Build(time.Now(), serverName, keyID, priv)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// this should pass
 	evMapping, err := getMXIDMapping(ev)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = validateMXIDMappingSignatures(t.Context(), ev, *evMapping, &StubVerifier{}, verImpl)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// this fails, for some random reason
 	err = validateMXIDMappingSignatures(t.Context(), ev, *evMapping, &StubVerifier{
 		results: []VerifyJSONResult{{Error: errors.New("err")}},
 	}, verImpl)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	// fails for missing mapping
 	eb.Content = []byte("{}")
 	ev, err = eb.Build(time.Now(), serverName, keyID, priv)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = getMXIDMapping(ev)
-	assert.Error(t, err)
+	require.Error(t, err)
 }

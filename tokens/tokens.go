@@ -43,7 +43,7 @@ type TokenOptions struct {
 	Duration int
 }
 
-// token authentication ("m.login.token").
+// GenerateLoginToken returns a token for authentication ("m.login.token").
 func GenerateLoginToken(op TokenOptions) (string, error) {
 	if !isValidTokenOptions(op) {
 		return "", errors.New("the given TokenOptions is invalid")

@@ -1,3 +1,4 @@
+// nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -20,7 +22,7 @@ func TestCheckFields(t *testing.T) {
 	tests := []struct {
 		name            string
 		input           ProtoEvent
-		wantErr         assert.ErrorAssertionFunc
+		wantErr         require.ErrorAssertionFunc
 		wantPersistable bool
 	}{
 
@@ -34,7 +36,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr: assert.Error,
+			wantErr: require.Error,
 		},
 		{
 			name: "fail due to event size",
@@ -46,7 +48,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage(fmt.Sprintf(`{"data":"%s"}`, strings.Repeat("x", maxEventLength))),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr: assert.Error,
+			wantErr: require.Error,
 		},
 		{
 			name: "fail due to senderID too long",
@@ -58,7 +60,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr: assert.Error,
+			wantErr: require.Error,
 		},
 		{
 			name: "successfully check fields",
@@ -70,7 +72,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr: assert.NoError,
+			wantErr: require.NoError,
 		}, {
 			name: "fail due to senderID too large",
 			input: ProtoEvent{
@@ -81,7 +83,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr:         assert.Error,
+			wantErr:         require.Error,
 			wantPersistable: true,
 		},
 		{
@@ -95,7 +97,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr:         assert.Error,
+			wantErr:         require.Error,
 			wantPersistable: true,
 		},
 		{
@@ -109,7 +111,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr:         assert.Error,
+			wantErr:         require.Error,
 			wantPersistable: false,
 		},
 		{
@@ -123,7 +125,7 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr:         assert.Error,
+			wantErr:         require.Error,
 			wantPersistable: true,
 		},
 		{
@@ -137,12 +139,12 @@ func TestCheckFields(t *testing.T) {
 				Content:    json.RawMessage("{}"),
 				Unsigned:   json.RawMessage("{}"),
 			},
-			wantErr:         assert.Error,
+			wantErr:         require.Error,
 			wantPersistable: false,
 		},
 	}
 	_, sk, err := ed25519.GenerateKey(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for roomVersion := range roomVersionMeta {
