@@ -150,7 +150,10 @@ func TestCheckFields(t *testing.T) {
 					continue
 				}
 				t.Run(tt.name+"-"+string(roomVersion), func(t *testing.T) {
-					ev, err := MustGetRoomVersion(roomVersion).NewEventBuilderFromProtoEvent(&tt.input).Build(time.Now(), "localhost", "ed25519:1", sk)
+					ev, err := MustGetRoomVersion(
+						roomVersion,
+					).NewEventBuilderFromProtoEvent(&tt.input).
+						Build(time.Now(), "localhost", "ed25519:1", sk)
 					tt.wantErr(t, err)
 					if ev != nil {
 						err = CheckFields(ev)
@@ -162,9 +165,7 @@ func TestCheckFields(t *testing.T) {
 						assert.Equalf(t, tt.wantPersistable, e.Persistable, "unexpected persistable")
 					}
 				})
-
 			}
-
 		})
 	}
 }

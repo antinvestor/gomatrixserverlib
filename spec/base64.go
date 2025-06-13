@@ -19,7 +19,7 @@ import (
 	"database/sql/driver"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"strings"
 )
 
@@ -34,12 +34,12 @@ import (
 // copied as-is.
 type Base64Bytes []byte
 
-// Encode encodes the bytes as base64
+// Encode encodes the bytes as base64.
 func (b64 Base64Bytes) Encode() string {
 	return base64.RawStdEncoding.EncodeToString(b64)
 }
 
-// Decode decodes the given input into this Base64Bytes
+// Decode decodes the given input into this Base64Bytes.
 func (b64 *Base64Bytes) Decode(str string) error {
 	// We must check whether the string was encoded in a URL-safe way in order
 	// to use the appropriate encoding.
@@ -52,7 +52,7 @@ func (b64 *Base64Bytes) Decode(str string) error {
 	return err
 }
 
-// Implements sql.Scanner
+// Implements sql.Scanner.
 func (b64 *Base64Bytes) Scan(src interface{}) error {
 	switch v := src.(type) {
 	case string:
@@ -63,11 +63,11 @@ func (b64 *Base64Bytes) Scan(src interface{}) error {
 	case json.RawMessage:
 		return b64.UnmarshalJSON(v)
 	default:
-		return fmt.Errorf("unsupported source type")
+		return errors.New("unsupported source type")
 	}
 }
 
-// Implements sql.Valuer
+// Implements sql.Valuer.
 func (b64 Base64Bytes) Value() (driver.Value, error) {
 	return b64.Encode(), nil
 }
@@ -81,8 +81,7 @@ func (b64 Base64Bytes) MarshalJSON() ([]byte, error) {
 	return json.Marshal(b64.Encode())
 }
 
-// MarshalYAML implements yaml.Marshaller
-// It just encodes the bytes as base64, which is a valid YAML string
+// It just encodes the bytes as base64, which is a valid YAML string.
 func (b64 Base64Bytes) MarshalYAML() (interface{}, error) {
 	return b64.Encode(), nil
 }
@@ -94,19 +93,18 @@ func (b64 *Base64Bytes) UnmarshalJSON(raw []byte) (err error) {
 	// directly on the raw JSON if the JSON didn't contain any escapes.
 	var str string
 	if err = json.Unmarshal(raw, &str); err != nil {
-		return
+		return err
 	}
 	err = b64.Decode(str)
-	return
+	return err
 }
 
-// UnmarshalYAML implements yaml.Unmarshaller
-// it unmarshals the input as a yaml string and then base64-decodes the result
+// it unmarshals the input as a yaml string and then base64-decodes the result.
 func (b64 *Base64Bytes) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
 	var str string
 	if err = unmarshal(&str); err != nil {
-		return
+		return err
 	}
 	err = b64.Decode(str)
-	return
+	return err
 }

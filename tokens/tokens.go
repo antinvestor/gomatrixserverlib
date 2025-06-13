@@ -25,15 +25,15 @@ import (
 const (
 	macaroonVersion = macaroon.V2
 	defaultDuration = 2 * 60
-	// UserPrefix is a common prefix for every user_id caveat
+	// UserPrefix is a common prefix for every user_id caveat.
 	UserPrefix = "user_id = "
-	// TimePrefix is a common prefix for every expiry caveat
+	// TimePrefix is a common prefix for every expiry caveat.
 	TimePrefix = "time < "
-	// Gen is a common caveat for every token
+	// Gen is a common caveat for every token.
 	Gen = "gen = 1"
 )
 
-// TokenOptions represent parameters of Token
+// TokenOptions represent parameters of Token.
 type TokenOptions struct {
 	ServerPrivateKey []byte `yaml:"private_key"`
 	ServerName       string `yaml:"server_name"`
@@ -43,8 +43,7 @@ type TokenOptions struct {
 	Duration int
 }
 
-// GenerateLoginToken generates a short term login token to be used as
-// token authentication ("m.login.token")
+// token authentication ("m.login.token").
 func GenerateLoginToken(op TokenOptions) (string, error) {
 	if !isValidTokenOptions(op) {
 		return "", errors.New("the given TokenOptions is invalid")
@@ -72,7 +71,7 @@ func GenerateLoginToken(op TokenOptions) (string, error) {
 	return urlSafeEncode, nil
 }
 
-// isValidTokenOptions checks for required fields in a TokenOptions
+// isValidTokenOptions checks for required fields in a TokenOptions.
 func isValidTokenOptions(op TokenOptions) bool {
 	if op.ServerPrivateKey == nil || op.ServerName == "" || op.UserID == "" {
 		return false

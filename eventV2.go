@@ -27,10 +27,10 @@ func (e *eventV2) AuthEventIDs() []string {
 	return e.AuthEvents
 }
 
-// MarshalJSON implements json.Marshaller
+// MarshalJSON implements json.Marshaller.
 func (e *eventV2) MarshalJSON() ([]byte, error) {
 	if e.eventJSON == nil {
-		return nil, fmt.Errorf("gomatrixserverlib: cannot serialise uninitialised Event")
+		return nil, errors.New("gomatrixserverlib: cannot serialise uninitialised Event")
 	}
 	return e.eventJSON, nil
 }
@@ -82,21 +82,21 @@ func (e *eventV2) Redact() {
 	}
 	verImpl, err := GetRoomVersion(e.roomVersion)
 	if err != nil {
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w", err))
 	}
 	eventJSON, err := verImpl.RedactEventJSON(e.eventJSON)
 	if err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w", err))
 	}
 	if eventJSON, err = EnforcedCanonicalJSON(eventJSON, e.roomVersion); err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w", err))
 	}
 	var res eventV2
 	err = json.Unmarshal(eventJSON, &res)
 	if err != nil {
-		panic(fmt.Errorf("gomatrixserverlib: Redact failed %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: Redact failed %w", err))
 	}
 	res.redacted = true
 	res.eventJSON = eventJSON
@@ -108,11 +108,11 @@ func (e *eventV2) Sign(signingName string, keyID KeyID, privateKey ed25519.Priva
 	eventJSON, err := signEvent(signingName, keyID, privateKey, e.eventJSON, e.roomVersion)
 	if err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v (%q)", err, string(e.eventJSON)))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w (%q)", err, string(e.eventJSON)))
 	}
 	if eventJSON, err = EnforcedCanonicalJSON(eventJSON, e.roomVersion); err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v (%q)", err, string(e.eventJSON)))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w (%q)", err, string(e.eventJSON)))
 	}
 	res := &e
 	(*res).eventJSON = eventJSON
@@ -121,7 +121,10 @@ func (e *eventV2) Sign(signingName string, keyID KeyID, privateKey ed25519.Priva
 
 func newEventFromUntrustedJSONV2(eventJSON []byte, roomVersion IRoomVersion) (PDU, error) {
 	if r := gjson.GetBytes(eventJSON, "_*"); r.Exists() {
-		return nil, fmt.Errorf("gomatrixserverlib NewEventFromUntrustedJSON: found top-level '_' key, is this a headered event: %v", string(eventJSON))
+		return nil, fmt.Errorf(
+			"gomatrixserverlib NewEventFromUntrustedJSON: found top-level '_' key, is this a headered event: %v",
+			string(eventJSON),
+		)
 	}
 	if err := roomVersion.CheckCanonicalJSON(eventJSON); err != nil {
 		return nil, BadJSONError{err}
@@ -208,24 +211,36 @@ func CheckFields(input PDU) error { // nolint: gocyclo
 	}
 	if l := len(input.JSON()); l > maxEventLength {
 		return EventValidationError{
-			Code:    EventValidationTooLarge,
-			Message: fmt.Sprintf("gomatrixserverlib: event is too long, length %d bytes > maximum %d bytes", l, maxEventLength),
+			Code: EventValidationTooLarge,
+			Message: fmt.Sprintf(
+				"gomatrixserverlib: event is too long, length %d bytes > maximum %d bytes",
+				l,
+				maxEventLength,
+			),
 		}
 	}
 
 	// Compatibility to Synapse and older rooms. This was always enforced by Synapse
 	if l := utf8.RuneCountInString(input.Type()); l > maxIDLength {
 		return EventValidationError{
-			Code:    EventValidationTooLarge,
-			Message: fmt.Sprintf("gomatrixserverlib: event type is too long, length %d bytes > maximum %d bytes", l, maxIDLength),
+			Code: EventValidationTooLarge,
+			Message: fmt.Sprintf(
+				"gomatrixserverlib: event type is too long, length %d bytes > maximum %d bytes",
+				l,
+				maxIDLength,
+			),
 		}
 	}
 
 	if input.StateKey() != nil {
 		if l := utf8.RuneCountInString(*input.StateKey()); l > maxIDLength {
 			return EventValidationError{
-				Code:    EventValidationTooLarge,
-				Message: fmt.Sprintf("gomatrixserverlib: state key is too long, length %d bytes > maximum %d bytes", l, maxIDLength),
+				Code: EventValidationTooLarge,
+				Message: fmt.Sprintf(
+					"gomatrixserverlib: state key is too long, length %d bytes > maximum %d bytes",
+					l,
+					maxIDLength,
+				),
 			}
 		}
 	}
@@ -235,8 +250,12 @@ func CheckFields(input PDU) error { // nolint: gocyclo
 	// Byte size check: if these fail, then be lenient to avoid breaking rooms.
 	if l := len(input.Type()); l > maxIDLength {
 		return EventValidationError{
-			Code:        EventValidationTooLarge,
-			Message:     fmt.Sprintf("gomatrixserverlib: event type is too long, length %d bytes > maximum %d bytes", l, maxIDLength),
+			Code: EventValidationTooLarge,
+			Message: fmt.Sprintf(
+				"gomatrixserverlib: event type is too long, length %d bytes > maximum %d bytes",
+				l,
+				maxIDLength,
+			),
 			Persistable: persistable,
 		}
 	}
@@ -244,8 +263,12 @@ func CheckFields(input PDU) error { // nolint: gocyclo
 	if input.StateKey() != nil {
 		if l := len(*input.StateKey()); l > maxIDLength {
 			return EventValidationError{
-				Code:        EventValidationTooLarge,
-				Message:     fmt.Sprintf("gomatrixserverlib: state key is too long, length %d bytes > maximum %d bytes", l, maxIDLength),
+				Code: EventValidationTooLarge,
+				Message: fmt.Sprintf(
+					"gomatrixserverlib: state key is too long, length %d bytes > maximum %d bytes",
+					l,
+					maxIDLength,
+				),
 				Persistable: persistable,
 			}
 		}
@@ -278,7 +301,12 @@ func newEventFromTrustedJSONV2(eventJSON []byte, redacted bool, roomVersion IRoo
 	return &res, nil
 }
 
-func newEventFromTrustedJSONWithEventIDV2(eventID string, eventJSON []byte, redacted bool, roomVersion IRoomVersion) (PDU, error) {
+func newEventFromTrustedJSONWithEventIDV2(
+	eventID string,
+	eventJSON []byte,
+	redacted bool,
+	roomVersion IRoomVersion,
+) (PDU, error) {
 	res := &eventV2{}
 	if err := json.Unmarshal(eventJSON, &res); err != nil {
 		return nil, err

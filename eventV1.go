@@ -3,6 +3,7 @@ package gomatrixserverlib
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
@@ -23,10 +24,10 @@ type eventV1 struct {
 	AuthEvents []eventReference `json:"auth_events"`
 }
 
-// MarshalJSON implements json.Marshaller
+// MarshalJSON implements json.Marshaller.
 func (e eventV1) MarshalJSON() ([]byte, error) {
 	if e.eventJSON == nil {
-		return nil, fmt.Errorf("gomatrixserverlib: cannot serialise uninitialised Event")
+		return nil, errors.New("gomatrixserverlib: cannot serialise uninitialised Event")
 	}
 	return e.eventJSON, nil
 }
@@ -56,7 +57,7 @@ func (e *eventV1) Content() []byte {
 
 func (e *eventV1) JoinRule() (string, error) {
 	if !e.StateKeyEquals("") {
-		return "", fmt.Errorf("gomatrixserverlib: JoinRule() event is not a m.room.join_rules event, bad state key")
+		return "", errors.New("gomatrixserverlib: JoinRule() event is not a m.room.join_rules event, bad state key")
 	}
 	var content JoinRuleContent
 	if err := json.Unmarshal(e.eventFields.Content, &content); err != nil {
@@ -67,7 +68,9 @@ func (e *eventV1) JoinRule() (string, error) {
 
 func (e *eventV1) HistoryVisibility() (HistoryVisibility, error) {
 	if !e.StateKeyEquals("") {
-		return "", fmt.Errorf("gomatrixserverlib: HistoryVisibility() event is not a m.room.history_visibility event, bad state key")
+		return "", errors.New(
+			"gomatrixserverlib: HistoryVisibility() event is not a m.room.history_visibility event, bad state key",
+		)
 	}
 	var content HistoryVisibilityContent
 	if err := json.Unmarshal(e.eventFields.Content, &content); err != nil {
@@ -84,14 +87,16 @@ func (e *eventV1) Membership() (string, error) {
 		return "", err
 	}
 	if e.StateKey() == nil {
-		return "", fmt.Errorf("gomatrixserverlib: Membersip() event is not a m.room.member event, missing state key")
+		return "", errors.New("gomatrixserverlib: Membersip() event is not a m.room.member event, missing state key")
 	}
 	return content.Membership, nil
 }
 
 func (e *eventV1) PowerLevels() (*PowerLevelContent, error) {
 	if !e.StateKeyEquals("") {
-		return nil, fmt.Errorf("gomatrixserverlib: PowerLevels() event is not a m.room.power_levels event, bad state key")
+		return nil, errors.New(
+			"gomatrixserverlib: PowerLevels() event is not a m.room.power_levels event, bad state key",
+		)
 	}
 	c, err := NewPowerLevelContentFromEvent(e)
 	if err != nil {
@@ -146,21 +151,21 @@ func (e *eventV1) Redact() {
 	}
 	verImpl, err := GetRoomVersion(e.roomVersion)
 	if err != nil {
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w", err))
 	}
 	eventJSON, err := verImpl.RedactEventJSON(e.eventJSON)
 	if err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w", err))
 	}
 	if eventJSON, err = EnforcedCanonicalJSON(eventJSON, e.roomVersion); err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w", err))
 	}
 	var res eventV1
 	err = json.Unmarshal(eventJSON, &res)
 	if err != nil {
-		panic(fmt.Errorf("gomatrixserverlib: populateFieldsFromJSON failed %v", err))
+		panic(fmt.Errorf("gomatrixserverlib: populateFieldsFromJSON failed %w", err))
 	}
 
 	res.redacted = true
@@ -226,11 +231,11 @@ func (e *eventV1) Sign(signingName string, keyID KeyID, privateKey ed25519.Priva
 	eventJSON, err := signEvent(signingName, keyID, privateKey, e.eventJSON, e.roomVersion)
 	if err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v (%q)", err, string(e.eventJSON)))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w (%q)", err, string(e.eventJSON)))
 	}
 	if eventJSON, err = EnforcedCanonicalJSON(eventJSON, e.roomVersion); err != nil {
 		// This is unreachable for events created with EventBuilder.Build or NewEventFromUntrustedJSON
-		panic(fmt.Errorf("gomatrixserverlib: invalid event %v (%q)", err, string(e.eventJSON)))
+		panic(fmt.Errorf("gomatrixserverlib: invalid event %w (%q)", err, string(e.eventJSON)))
 	}
 	res := &e
 	(*res).eventJSON = eventJSON
@@ -261,7 +266,10 @@ func (e *eventV1) ToHeaderedJSON() ([]byte, error) {
 
 func newEventFromUntrustedJSONV1(eventJSON []byte, roomVersion IRoomVersion) (PDU, error) {
 	if r := gjson.GetBytes(eventJSON, "_*"); r.Exists() {
-		return nil, fmt.Errorf("gomatrixserverlib NewEventFromUntrustedJSON: found top-level '_' key, is this a headered event: %v", string(eventJSON))
+		return nil, fmt.Errorf(
+			"gomatrixserverlib NewEventFromUntrustedJSON: found top-level '_' key, is this a headered event: %v",
+			string(eventJSON),
+		)
 	}
 	if err := roomVersion.CheckCanonicalJSON(eventJSON); err != nil {
 		return nil, BadJSONError{err}
@@ -341,7 +349,12 @@ func newEventFromTrustedJSONV1(eventJSON []byte, redacted bool, roomVersion IRoo
 	return res, nil
 }
 
-func newEventFromTrustedJSONWithEventIDV1(eventID string, eventJSON []byte, redacted bool, roomVersion IRoomVersion) (PDU, error) {
+func newEventFromTrustedJSONWithEventIDV1(
+	eventID string,
+	eventJSON []byte,
+	redacted bool,
+	roomVersion IRoomVersion,
+) (PDU, error) {
 	res := &eventV1{}
 	if err := json.Unmarshal(eventJSON, &res); err != nil {
 		return nil, err

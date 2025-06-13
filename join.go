@@ -26,7 +26,12 @@ type MembershipQuerier interface {
 type RestrictedRoomJoinQuerier interface {
 	CurrentStateEvent(ctx context.Context, roomID spec.RoomID, eventType string, stateKey string) (PDU, error)
 	InvitePending(ctx context.Context, roomID spec.RoomID, senderID spec.SenderID) (bool, error)
-	RestrictedRoomJoinInfo(ctx context.Context, roomID spec.RoomID, senderID spec.SenderID, localServerName spec.ServerName) (*RestrictedRoomJoinInfo, error)
+	RestrictedRoomJoinInfo(
+		ctx context.Context,
+		roomID spec.RoomID,
+		senderID spec.SenderID,
+		localServerName spec.ServerName,
+	) (*RestrictedRoomJoinInfo, error)
 }
 
 type ProtoEvent struct {
@@ -59,13 +64,13 @@ type ProtoEvent struct {
 
 func (pe *ProtoEvent) SetContent(content interface{}) (err error) {
 	pe.Content, err = json.Marshal(content)
-	return
+	return err
 }
 
 // SetUnsigned sets the JSON unsigned key of the event.
 func (pe *ProtoEvent) SetUnsigned(unsigned interface{}) (err error) {
 	pe.Unsigned, err = json.Marshal(unsigned)
-	return
+	return err
 }
 
 type MakeJoinResponse interface {

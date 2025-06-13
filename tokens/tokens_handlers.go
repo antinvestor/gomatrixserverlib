@@ -25,11 +25,11 @@ import (
 func GetUserFromToken(token string) (user string, err error) {
 	mac, err := deSerializeMacaroon(token)
 	if err != nil {
-		return
+		return user, err
 	}
 
-	user = string(mac.Id()[:])
-	return
+	user = string(mac.Id())
+	return user, err
 }
 
 // ValidateToken validates that the token is parseable and signed by this server.

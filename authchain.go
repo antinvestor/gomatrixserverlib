@@ -21,7 +21,12 @@ type EventProvider func(ctx context.Context, roomVer RoomVersion, eventIDs []str
 // The `provideEvents` function will only be called for *new* events rather than for everything as it is
 // assumed that this function is costly. Failing to provide all the requested events will fail this function.
 // Returning an error from `provideEvents` will also fail this function.
-func VerifyEventAuthChain(ctx context.Context, eventToVerify PDU, provideEvents EventProvider, userIDForSender spec.UserIDForSender) error {
+func VerifyEventAuthChain(
+	ctx context.Context,
+	eventToVerify PDU,
+	provideEvents EventProvider,
+	userIDForSender spec.UserIDForSender,
+) error {
 	eventsByID := make(map[string]PDU) // A lookup table for verifying this auth chain
 	evv := eventToVerify
 	eventsByID[evv.EventID()] = evv

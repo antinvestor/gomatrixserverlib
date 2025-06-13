@@ -295,8 +295,7 @@ func sortConflictedEventsByDepthAndSHA1(events []PDU) []conflictedEvent {
 	return block
 }
 
-// A conflictedEvent is used to sort the events in a block by ascending depth and descending sha1 of event ID.
-// (SPEC: We use the SHA1 of the event ID as an arbitrary tie breaker between events with the same depth)
+// (SPEC: We use the SHA1 of the event ID as an arbitrary tie breaker between events with the same depth).
 type conflictedEvent struct {
 	depth       int64
 	eventIDSHA1 [sha1.Size]byte

@@ -49,11 +49,10 @@ type HandleInviteV3Input struct {
 	GetOrCreateSenderID spec.CreateSenderID // Creates, if needed, a new senderID & private key
 }
 
-// HandleInvite - Ensures the incoming invite request is valid and signs the event
-// to return back to the remote server.
-// On success returns a fully formed & signed Invite Event
+// On success returns a fully formed & signed Invite Event.
 func HandleInvite(ctx context.Context, input HandleInviteInput) (PDU, error) {
-	if input.RoomQuerier == nil || input.MembershipQuerier == nil || input.StateQuerier == nil || input.UserIDQuerier == nil {
+	if input.RoomQuerier == nil || input.MembershipQuerier == nil || input.StateQuerier == nil ||
+		input.UserIDQuerier == nil {
 		panic("Missing valid Querier")
 	}
 	if input.Verifier == nil {
@@ -110,7 +109,8 @@ func HandleInvite(ctx context.Context, input HandleInviteInput) (PDU, error) {
 }
 
 func HandleInviteV3(ctx context.Context, input HandleInviteV3Input) (PDU, error) {
-	if input.RoomQuerier == nil || input.MembershipQuerier == nil || input.StateQuerier == nil || input.UserIDQuerier == nil {
+	if input.RoomQuerier == nil || input.MembershipQuerier == nil || input.StateQuerier == nil ||
+		input.UserIDQuerier == nil {
 		panic("Missing valid Querier")
 	}
 	if input.Verifier == nil {
@@ -138,7 +138,12 @@ func HandleInviteV3(ctx context.Context, input HandleInviteV3Input) (PDU, error)
 	// this could be because they are already invited/joined or were previously.
 	// In that case, use the existing senderID to complete this invite event.
 	// Otherwise we need to create a new senderID
-	invitedSenderID, signingKey, err := input.GetOrCreateSenderID(ctx, input.InvitedUser, input.RoomID, string(input.RoomVersion))
+	invitedSenderID, signingKey, err := input.GetOrCreateSenderID(
+		ctx,
+		input.InvitedUser,
+		input.RoomID,
+		string(input.RoomVersion),
+	)
 	if err != nil {
 		util.Log(ctx).WithError(err).Error("GetOrCreateSenderID failed")
 		return nil, spec.InternalServerError{}
@@ -159,7 +164,12 @@ func HandleInviteV3(ctx context.Context, input HandleInviteV3Input) (PDU, error)
 	return handleInviteCommonChecks(ctx, input.HandleInviteInput, fullEvent, spec.UserID{})
 }
 
-func handleInviteCommonChecks(ctx context.Context, input HandleInviteInput, event PDU, sender spec.UserID) (PDU, error) {
+func handleInviteCommonChecks(
+	ctx context.Context,
+	input HandleInviteInput,
+	event PDU,
+	sender spec.UserID,
+) (PDU, error) {
 	isKnownRoom, err := input.RoomQuerier.IsKnownRoom(ctx, input.RoomID)
 	if err != nil {
 		util.Log(ctx).WithError(err).Error("failed querying known room")

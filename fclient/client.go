@@ -37,7 +37,7 @@ import (
 	"github.com/pitabwire/util"
 )
 
-// Default HTTPS request timeout
+// Default HTTPS request timeout.
 const requestTimeout time.Duration = time.Duration(30) * time.Second
 
 // A Client makes HTTP requests to remote servers. It is used to
@@ -180,7 +180,13 @@ type destinationTripper struct {
 	dialer          *net.Dialer
 }
 
-func newDestinationTripper(skipVerify bool, dnsCache *DNSCache, keepAlives, wellKnownSRV bool, allowCIDRs []string, denyCIDRs []string) *destinationTripper {
+func newDestinationTripper(
+	skipVerify bool,
+	dnsCache *DNSCache,
+	keepAlives, wellKnownSRV bool,
+	allowCIDRs []string,
+	denyCIDRs []string,
+) *destinationTripper {
 	tripper := &destinationTripper{
 		transports:   make(map[string]*destinationTripperTransport),
 		skipVerify:   skipVerify,
@@ -226,8 +232,10 @@ func newDestinationTripperDialer(allowNetworks []string, denyNetworks []string) 
 	}
 }
 
-// allowDenyNetworksControl is used to allow/deny access to certain networks
-func allowDenyNetworksControl(allowNetworks, denyNetworks []string) func(_ context.Context, network string, address string, conn syscall.RawConn) error {
+// allowDenyNetworksControl is used to allow/deny access to certain networks.
+func allowDenyNetworksControl(
+	allowNetworks, denyNetworks []string,
+) func(_ context.Context, network string, address string, conn syscall.RawConn) error {
 	return func(_ context.Context, network string, address string, conn syscall.RawConn) error {
 		if network != "tcp4" && network != "tcp6" {
 			return fmt.Errorf("%s is not a safe network type", network)
@@ -235,7 +243,7 @@ func allowDenyNetworksControl(allowNetworks, denyNetworks []string) func(_ conte
 
 		host, _, err := net.SplitHostPort(address)
 		if err != nil {
-			return fmt.Errorf("%s is not a valid host/port pair: %s", address, err)
+			return fmt.Errorf("%s is not a valid host/port pair: %w", address, err)
 		}
 
 		ipaddress := net.ParseIP(host)
@@ -262,7 +270,7 @@ func isAllowed(ip net.IP, allowCIDRs []string, denyCIDRs []string) bool {
 }
 
 func inRange(ip net.IP, CIDRs []string) bool {
-	for i := 0; i < len(CIDRs); i++ {
+	for i := range len(CIDRs) {
 		cidr := CIDRs[i]
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {
@@ -324,7 +332,7 @@ func makeHTTPSURL(u *url.URL, addr string) (httpsURL url.URL) {
 	httpsURL = *u
 	httpsURL.Scheme = "https"
 	httpsURL.Host = addr
-	return
+	return httpsURL
 }
 
 func (f *destinationTripper) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -408,9 +416,9 @@ func (fc *Client) LookupUserInfo(
 		RawQuery: url.Values{"access_token": []string{token}}.Encode(),
 	}
 
-	req, err := http.NewRequest("GET", url.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return
+		return u, err
 	}
 
 	var response *http.Response
@@ -419,33 +427,33 @@ func (fc *Client) LookupUserInfo(
 		defer response.Body.Close() // nolint: errcheck
 	}
 	if err != nil {
-		return
+		return u, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		var errorOutput []byte
 		errorOutput, err = io.ReadAll(response.Body)
 		if err != nil {
-			return
+			return u, err
 		}
 		err = fmt.Errorf("HTTP %d : %s", response.StatusCode, errorOutput)
-		return
+		return u, err
 	}
 
 	err = json.NewDecoder(response.Body).Decode(&u)
 	if err != nil {
-		return
+		return u, err
 	}
 
 	userParts := strings.SplitN(u.Sub, ":", 2)
 	if len(userParts) != 2 || userParts[1] != string(matrixServer) {
 		err = fmt.Errorf("userID doesn't match server name '%v' != '%v'", u.Sub, matrixServer)
-		return
+		return u, err
 	}
 
-	return
+	return u, err
 }
 
-// GetServerKeys asks a matrix server for its signing keys and TLS cert
+// GetServerKeys asks a matrix server for its signing keys and TLS cert.
 func (fc *Client) GetServerKeys(
 	ctx context.Context, matrixServer spec.ServerName,
 ) (gomatrixserverlib.ServerKeys, error) {
@@ -456,7 +464,7 @@ func (fc *Client) GetServerKeys(
 	}
 
 	var body gomatrixserverlib.ServerKeys
-	req, err := http.NewRequest("GET", url.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return body, err
 	}
@@ -478,14 +486,14 @@ func (fc *Client) GetVersion(
 		Host:   string(s),
 		Path:   "/_matrix/federation/v1/version",
 	}
-	req, err := http.NewRequest("GET", url.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return
+		return res, err
 	}
 
 	// Make the request and parse the response
 	err = fc.DoRequestAndParseResponse(ctx, req, &res)
-	return
+	return res, err
 }
 
 // LookupServerKeys looks up the keys for a matrix server from a matrix server.
@@ -539,7 +547,7 @@ func (fc *Client) LookupServerKeys(
 		ServerKeyList []gomatrixserverlib.ServerKeys
 	}
 
-	req, err := http.NewRequest("POST", url.String(), bytes.NewBuffer(requestBytes))
+	req, err := http.NewRequest(http.MethodPost, url.String(), bytes.NewBuffer(requestBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -562,14 +570,18 @@ func (fc *Client) LookupServerKeys(
 	return res.ServerKeyList, nil
 }
 
-// CreateMediaDownloadRequest creates a request for media on a homeserver and returns the http.Response or an error
+// CreateMediaDownloadRequest creates a request for media on a homeserver and returns the http.Response or an error.
 func (fc *Client) CreateMediaDownloadRequest(
 	ctx context.Context, matrixServer spec.ServerName, mediaID string,
 ) (*http.Response, error) {
 	// Set allow_remote=false here so that we avoid loops:
 	// https://github.com/matrix-org/synapse/pull/1992
-	requestURL := "matrix://" + string(matrixServer) + "/_matrix/media/v3/download/" + string(matrixServer) + "/" + mediaID + "?allow_remote=false"
-	req, err := http.NewRequest("GET", requestURL, nil)
+	requestURL := "matrix://" + string(
+		matrixServer,
+	) + "/_matrix/media/v3/download/" + string(
+		matrixServer,
+	) + "/" + mediaID + "?allow_remote=false"
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		return nil, err
 	}

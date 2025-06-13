@@ -60,13 +60,13 @@ type ServerKeyFields struct {
 	OldVerifyKeys map[KeyID]OldVerifyKey `json:"old_verify_keys"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler
+// UnmarshalJSON implements json.Unmarshaler.
 func (keys *ServerKeys) UnmarshalJSON(data []byte) error {
 	keys.Raw = data
 	return json.Unmarshal(data, &keys.ServerKeyFields)
 }
 
-// MarshalJSON implements json.Marshaler
+// MarshalJSON implements json.Marshaler.
 func (keys ServerKeys) MarshalJSON() ([]byte, error) {
 	if len(keys.Raw) == 0 {
 		js, err := json.Marshal(keys.ServerKeyFields)
@@ -106,8 +106,7 @@ type KeyChecks struct {
 	Ed25519Checks      map[KeyID]Ed25519Checks // Checks for Ed25519 keys.
 }
 
-// CheckKeys checks the keys returned from a server to make sure they are valid.
-// If the checks pass then also return a map of key_id to Ed25519 public key
+// If the checks pass then also return a map of key_id to Ed25519 public key.
 func CheckKeys(
 	serverName spec.ServerName,
 	now time.Time,
@@ -125,7 +124,8 @@ func CheckKeys(
 	if !checks.AllChecksOK {
 		ed25519Keys = nil
 	}
-	return
+	return checks,
+		ed25519Keys
 }
 
 func checkVerifyKeys(keys ServerKeys, checks *KeyChecks) map[KeyID]spec.Base64Bytes {

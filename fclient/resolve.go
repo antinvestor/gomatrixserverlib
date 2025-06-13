@@ -17,6 +17,7 @@ package fclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -44,11 +45,15 @@ func ResolveServer(ctx context.Context, serverName spec.ServerName) (results []R
 // resolveServer does the same thing as ResolveServer, except it also requires
 // the checkWellKnown parameter, which indicates whether a .well-known file
 // should be looked up.
-func resolveServer(ctx context.Context, serverName spec.ServerName, checkWellKnown bool) (results []ResolutionResult, err error) {
+func resolveServer(
+	ctx context.Context,
+	serverName spec.ServerName,
+	checkWellKnown bool,
+) (results []ResolutionResult, err error) {
 	host, port, valid := spec.ParseAndValidateServerName(serverName)
 	if !valid {
-		err = fmt.Errorf("invalid server name")
-		return
+		err = errors.New("invalid server name")
+		return results, err
 	}
 
 	// 1. If the hostname is an IP literal
@@ -74,7 +79,7 @@ func resolveServer(ctx context.Context, serverName spec.ServerName, checkWellKno
 			},
 		}
 
-		return
+		return results, err
 	}
 
 	// 2. If the hostname is not an IP literal, and the server name includes an
@@ -88,7 +93,7 @@ func resolveServer(ctx context.Context, serverName spec.ServerName, checkWellKno
 			},
 		}
 
-		return
+		return results, err
 	}
 
 	if checkWellKnown {
@@ -104,8 +109,7 @@ func resolveServer(ctx context.Context, serverName spec.ServerName, checkWellKno
 	return handleNoWellKnown(ctx, serverName), nil
 }
 
-// handleNoWellKnown implements steps 4 and 5 of the resolution algorithm (as
-// well as 3.3 and 3.4)
+// well as 3.3 and 3.4).
 func handleNoWellKnown(ctx context.Context, serverName spec.ServerName) (results []ResolutionResult) {
 	// 4. If the /.well-known request resulted in an error response
 	records, err := lookupSRV(ctx, serverName)
@@ -127,7 +131,7 @@ func handleNoWellKnown(ctx context.Context, serverName spec.ServerName) (results
 			})
 		}
 
-		return
+		return results
 	}
 
 	// 5. If the /.well-known request returned an error response, and the SRV
@@ -140,7 +144,7 @@ func handleNoWellKnown(ctx context.Context, serverName spec.ServerName) (results
 		},
 	}
 
-	return
+	return results
 }
 
 func lookupSRV(ctx context.Context, serverName spec.ServerName) ([]*net.SRV, error) {

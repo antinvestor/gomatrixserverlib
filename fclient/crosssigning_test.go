@@ -32,21 +32,31 @@ var tests = []struct {
 		expect: false,
 	},
 	{
-		name:   "DifferentUsageLength_ReturnsFalse",
-		s:      &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeMaster}},
-		other:  &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeMaster, CrossSigningKeyPurposeSelfSigning}},
+		name: "DifferentUsageLength_ReturnsFalse",
+		s:    &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeMaster}},
+		other: &CrossSigningKey{
+			Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeMaster, CrossSigningKeyPurposeSelfSigning},
+		},
 		expect: false,
 	},
 	{
-		name:   "UnsortedUsages_ReturnsTrue",
-		s:      &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeSelfSigning, CrossSigningKeyPurposeMaster}},
-		other:  &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeMaster, CrossSigningKeyPurposeSelfSigning}},
+		name: "UnsortedUsages_ReturnsTrue",
+		s: &CrossSigningKey{
+			Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeSelfSigning, CrossSigningKeyPurposeMaster},
+		},
+		other: &CrossSigningKey{
+			Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeMaster, CrossSigningKeyPurposeSelfSigning},
+		},
 		expect: true,
 	},
 	{
-		name:   "UnsortedUsages_ReturnsTrue",
-		s:      &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeSelfSigning, CrossSigningKeyPurposeMaster}},
-		other:  &CrossSigningKey{Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeSelfSigning, CrossSigningKeyPurposeMaster}},
+		name: "UnsortedUsages_ReturnsTrue",
+		s: &CrossSigningKey{
+			Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeSelfSigning, CrossSigningKeyPurposeMaster},
+		},
+		other: &CrossSigningKey{
+			Usage: []CrossSigningKeyPurpose{CrossSigningKeyPurposeSelfSigning, CrossSigningKeyPurposeMaster},
+		},
 		expect: true,
 	},
 	{
@@ -68,15 +78,26 @@ var tests = []struct {
 		expect: false,
 	},
 	{
-		name:   "DifferentSignaturesLength_ReturnsFalse",
-		s:      &CrossSigningKey{Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {}}}},
-		other:  &CrossSigningKey{Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {}}, "sig2": {"key2": {}}}},
+		name: "DifferentSignaturesLength_ReturnsFalse",
+		s: &CrossSigningKey{
+			Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {}}},
+		},
+		other: &CrossSigningKey{
+			Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{
+				"sig1": {"key1": {}},
+				"sig2": {"key2": {}},
+			},
+		},
 		expect: false,
 	},
 	{
-		name:   "DifferentSignaturesValues_ReturnsFalse",
-		s:      &CrossSigningKey{Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {}}}},
-		other:  &CrossSigningKey{Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {1}}}},
+		name: "DifferentSignaturesValues_ReturnsFalse",
+		s: &CrossSigningKey{
+			Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {}}},
+		},
+		other: &CrossSigningKey{
+			Signatures: map[string]map[gomatrixserverlib.KeyID]spec.Base64Bytes{"sig1": {"key1": {1}}},
+		},
 		expect: false,
 	},
 	{
@@ -108,8 +129,7 @@ func TestCrossSigningKeyEqual(t *testing.T) {
 }
 
 func BenchmarkEqual(b *testing.B) {
-
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		for _, tt := range tests {
 			if !tt.s.Equal(tt.other) && tt.expect {
 				b.Fatal(tt.name, tt.s)

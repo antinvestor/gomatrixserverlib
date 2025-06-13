@@ -25,7 +25,13 @@ type IRoomVersion interface {
 	NewEventFromUntrustedJSON(eventJSON []byte) (result PDU, err error)
 	NewEventBuilder() *EventBuilder
 	NewEventBuilderFromProtoEvent(pe *ProtoEvent) *EventBuilder
-	CheckRestrictedJoin(ctx context.Context, localServerName spec.ServerName, roomQuerier RestrictedRoomJoinQuerier, roomID spec.RoomID, senderID spec.SenderID) (string, error)
+	CheckRestrictedJoin(
+		ctx context.Context,
+		localServerName spec.ServerName,
+		roomQuerier RestrictedRoomJoinQuerier,
+		roomID spec.RoomID,
+		senderID spec.SenderID,
+	) (string, error)
 
 	RestrictedJoinServername(content []byte) (spec.ServerName, error)
 	CheckRestrictedJoinsAllowed() error
@@ -478,7 +484,10 @@ func (v RoomVersionImpl) SignatureValidityCheck(atTS, validUntilTS spec.Timestam
 }
 
 // CheckNotificationLevels checks that the changes in notification levels are allowed.
-func (v RoomVersionImpl) CheckNotificationLevels(senderLevel int64, oldPowerLevels, newPowerLevels PowerLevelContent) error {
+func (v RoomVersionImpl) CheckNotificationLevels(
+	senderLevel int64,
+	oldPowerLevels, newPowerLevels PowerLevelContent,
+) error {
 	return v.notificationLevelCheck(senderLevel, oldPowerLevels, newPowerLevels)
 }
 
@@ -531,7 +540,11 @@ func (v RoomVersionImpl) NewEventFromTrustedJSON(eventJSON []byte, redacted bool
 	return v.newEventFromTrustedJSONFunc(eventJSON, redacted, v)
 }
 
-func (v RoomVersionImpl) NewEventFromTrustedJSONWithEventID(eventID string, eventJSON []byte, redacted bool) (result PDU, err error) {
+func (v RoomVersionImpl) NewEventFromTrustedJSONWithEventID(
+	eventID string,
+	eventJSON []byte,
+	redacted bool,
+) (result PDU, err error) {
 	return v.newEventFromTrustedJSONWithEventIDFunc(eventID, eventJSON, redacted, v)
 }
 

@@ -51,7 +51,10 @@ const examplePutContent = `{"edus":[{"content":{"device_id":"YHRUBZNPFS",` +
 
 type noopJSONVerifier struct{}
 
-func (v *noopJSONVerifier) VerifyJSONs(ctx context.Context, requests []gomatrixserverlib.VerifyJSONRequest) ([]gomatrixserverlib.VerifyJSONResult, error) {
+func (v *noopJSONVerifier) VerifyJSONs(
+	ctx context.Context,
+	requests []gomatrixserverlib.VerifyJSONRequest,
+) ([]gomatrixserverlib.VerifyJSONResult, error) {
 	x := make([]gomatrixserverlib.VerifyJSONResult, len(requests))
 	return x, nil
 }

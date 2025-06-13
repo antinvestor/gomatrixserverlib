@@ -3,6 +3,7 @@ package fclient
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -17,9 +18,7 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-// A FederationRequest is a request to send to a remote server or a request
-// received from a remote server.
-// Federation requests are signed by building a JSON object and signing it
+// Federation requests are signed by building a JSON object and signing it.
 type FederationRequest struct {
 	// fields implement the JSON format needed for signing
 	// specified in https://matrix.org/docs/spec/server_server/unstable.html#request-authentication
@@ -33,11 +32,7 @@ type FederationRequest struct {
 	}
 }
 
-// NewFederationRequest creates a matrix request. Takes an HTTP method, a
-// destination homeserver and a request path which can have a query string.
-// The destination is the name of a matrix homeserver.
-// The request path must begin with a slash.
-// Eg. NewFederationRequest("GET", "matrix.org", "/_matrix/federation/v1/send/123")
+// Eg. NewFederationRequest("GET", "matrix.org", "/_matrix/federation/v1/send/123").
 func NewFederationRequest(method string, origin, destination spec.ServerName, requestURI string) FederationRequest {
 	var r FederationRequest
 	r.fields.Origin = origin
@@ -51,10 +46,10 @@ func NewFederationRequest(method string, origin, destination spec.ServerName, re
 // Returns an error if there already is JSON content present on the request.
 func (r *FederationRequest) SetContent(content interface{}) error {
 	if r.fields.Content != nil {
-		return fmt.Errorf("gomatrixserverlib: content already set on the request")
+		return errors.New("gomatrixserverlib: content already set on the request")
 	}
 	if r.fields.Signatures != nil {
-		return fmt.Errorf("gomatrixserverlib: the request is signed and cannot be modified")
+		return errors.New("gomatrixserverlib: the request is signed and cannot be modified")
 	}
 	data, err := json.Marshal(content)
 	if err != nil {
@@ -93,9 +88,13 @@ func (r *FederationRequest) RequestURI() string {
 // Uses the algorithm specified https://matrix.org/docs/spec/server_server/unstable.html#request-authentication
 // Updates the request with the signature in place.
 // Returns an error if there was a problem signing the request.
-func (r *FederationRequest) Sign(serverName spec.ServerName, keyID gomatrixserverlib.KeyID, privateKey ed25519.PrivateKey) error {
+func (r *FederationRequest) Sign(
+	serverName spec.ServerName,
+	keyID gomatrixserverlib.KeyID,
+	privateKey ed25519.PrivateKey,
+) error {
 	if r.fields.Origin != "" && r.fields.Origin != serverName {
-		return fmt.Errorf("gomatrixserverlib: the request is already signed by a different server")
+		return errors.New("gomatrixserverlib: the request is already signed by a different server")
 	}
 	r.fields.Origin = serverName
 	// The request fields are already in the form required by the specification
@@ -146,16 +145,20 @@ func (r *FederationRequest) HTTPRequest() (*http.Request, error) {
 		// We don't need to check the signature since we already know that it is
 		// base64.
 		if !isSafeInHTTPQuotedString(string(r.fields.Origin)) {
-			return nil, fmt.Errorf("gomatrixserverlib: Request Origin isn't safe to include in an HTTP header")
+			return nil, errors.New("gomatrixserverlib: Request Origin isn't safe to include in an HTTP header")
 		}
 		if !isSafeInHTTPQuotedString(string(keyID)) {
-			return nil, fmt.Errorf("gomatrixserverlib: Request key ID isn't safe to include in an HTTP header")
+			return nil, errors.New("gomatrixserverlib: Request key ID isn't safe to include in an HTTP header")
 		}
 		if !isSafeInHTTPQuotedString(string(r.fields.Destination)) {
-			return nil, fmt.Errorf("gomatrixserverlib: Request Destination isn't safe to include in an HTTP header")
+			return nil, errors.New("gomatrixserverlib: Request Destination isn't safe to include in an HTTP header")
 		}
 		httpReq.Header.Add("Authorization", fmt.Sprintf(
-			"X-Matrix origin=\"%s\",key=\"%s\",sig=\"%s\",destination=\"%s\"", r.fields.Origin, keyID, sig, r.fields.Destination,
+			"X-Matrix origin=\"%s\",key=\"%s\",sig=\"%s\",destination=\"%s\"",
+			r.fields.Origin,
+			keyID,
+			sig,
+			r.fields.Destination,
 		))
 	}
 
@@ -169,7 +172,7 @@ func (r *FederationRequest) HTTPRequest() (*http.Request, error) {
 //
 //	qdtext         = HTAB / SP / %x21 / %x23-5B / %x5D-7E / %x80-FF
 func isSafeInHTTPQuotedString(text string) bool { // nolint: gocyclo
-	for i := 0; i < len(text); i++ {
+	for i := range len(text) {
 		c := text[i]
 		switch {
 		case c == '\t':
@@ -210,7 +213,7 @@ func VerifyHTTPRequest(
 ) (*FederationRequest, util.JSONResponse) {
 	request, err := readHTTPRequest(req)
 	if err != nil {
-		util.Log(req.Context()).WithError(err).Printf("Error parsing HTTP headers")
+		util.Log(req.Context()).WithError(err).Error("Error parsing HTTP headers")
 		return nil, util.MessageResponse(400, "Bad Request")
 	}
 	if request.fields.Destination != "" {
@@ -230,19 +233,19 @@ func VerifyHTTPRequest(
 	// So we can just serialise the request fields using the default marshaller
 	toVerify, err := json.Marshal(request.fields)
 	if err != nil {
-		util.Log(req.Context()).WithError(err).Printf("Error parsing JSON")
+		util.Log(req.Context()).WithError(err).Error("Error parsing JSON")
 		return nil, util.MessageResponse(400, "Invalid JSON")
 	}
 
 	if request.Origin() == "" {
 		message := "Missing \"Authorization: X-Matrix ...\" HTTP header"
-		util.Log(req.Context()).WithError(err).Printf(message)
+		util.Log(req.Context()).WithError(err).Error(message)
 		return nil, util.MessageResponse(401, message)
 	}
 	_, _, valid := spec.ParseAndValidateServerName(request.Origin())
 	if !valid {
 		message := "Invalid server name for Origin"
-		util.Log(req.Context()).WithError(err).Printf(message)
+		util.Log(req.Context()).WithError(err).Error(message)
 		return nil, util.MessageResponse(400, message)
 	}
 
@@ -254,19 +257,19 @@ func VerifyHTTPRequest(
 	}})
 	if err != nil {
 		message := "Error authenticating request"
-		util.Log(req.Context()).WithError(err).Printf(message)
+		util.Log(req.Context()).WithError(err).Error(message)
 		return nil, util.MessageResponse(500, message)
 	}
 	if results[0].Error != nil {
 		message := "Invalid request signature"
-		util.Log(req.Context()).WithError(results[0].Error).Printf(message)
+		util.Log(req.Context()).WithError(results[0].Error).Info(message)
 		return nil, util.MessageResponse(401, message)
 	}
 
 	return request, util.JSONResponse{Code: 200, JSON: struct{}{}}
 }
 
-// Returns an error if there was a problem reading the content of the request
+// Returns an error if there was a problem reading the content of the request.
 func readHTTPRequest(req *http.Request) (*FederationRequest, error) { // nolint: gocyclo
 	var result FederationRequest
 
@@ -288,7 +291,7 @@ func readHTTPRequest(req *http.Request) (*FederationRequest, error) { // nolint:
 		// check for invalid utf-8
 		// https://matrix.org/docs/spec/server_server/r0.1.4#api-standards
 		if !utf8.Valid(content) {
-			return nil, fmt.Errorf("gomatrixserverlib: The request contained invalid UTF-8")
+			return nil, errors.New("gomatrixserverlib: The request contained invalid UTF-8")
 		}
 		result.fields.Content = json.RawMessage(content)
 	}
@@ -300,10 +303,10 @@ func readHTTPRequest(req *http.Request) (*FederationRequest, error) { // nolint:
 			continue
 		}
 		if origin == "" || key == "" || sig == "" {
-			return nil, fmt.Errorf("gomatrixserverlib: invalid X-Matrix authorization header")
+			return nil, errors.New("gomatrixserverlib: invalid X-Matrix authorization header")
 		}
 		if result.fields.Origin != "" && result.fields.Origin != origin {
-			return nil, fmt.Errorf("gomatrixserverlib: different origins in X-Matrix authorization headers")
+			return nil, errors.New("gomatrixserverlib: different origins in X-Matrix authorization headers")
 		}
 		result.fields.Origin = origin
 		result.fields.Destination = destination
@@ -317,14 +320,16 @@ func readHTTPRequest(req *http.Request) (*FederationRequest, error) { // nolint:
 	return &result, nil
 }
 
-func ParseAuthorization(header string) (scheme string, origin, destination spec.ServerName, key gomatrixserverlib.KeyID, sig string) {
+func ParseAuthorization(
+	header string,
+) (scheme string, origin, destination spec.ServerName, key gomatrixserverlib.KeyID, sig string) {
 	parts := strings.SplitN(header, " ", 2)
 	scheme = parts[0]
 	if scheme != "X-Matrix" {
-		return
+		return scheme, origin, destination, key, sig
 	}
 	if len(parts) != 2 {
-		return
+		return scheme, origin, destination, key, sig
 	}
 	for _, data := range strings.Split(parts[1], ",") {
 		pair := strings.SplitN(data, "=", 2)
@@ -346,5 +351,5 @@ func ParseAuthorization(header string) (scheme string, origin, destination spec.
 			destination = spec.ServerName(value)
 		}
 	}
-	return
+	return scheme, origin, destination, key, sig
 }

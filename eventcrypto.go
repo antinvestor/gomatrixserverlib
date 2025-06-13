@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
@@ -29,7 +30,12 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-func VerifyAllEventSignatures(ctx context.Context, events []PDU, verifier JSONVerifier, userIDForSender spec.UserIDForSender) []error {
+func VerifyAllEventSignatures(
+	ctx context.Context,
+	events []PDU,
+	verifier JSONVerifier,
+	userIDForSender spec.UserIDForSender,
+) []error {
 	errors := make([]error, 0, len(events))
 	for _, e := range events {
 		errors = append(errors, VerifyEventSignatures(ctx, e, verifier, userIDForSender))
@@ -37,7 +43,12 @@ func VerifyAllEventSignatures(ctx context.Context, events []PDU, verifier JSONVe
 	return errors
 }
 
-func VerifyEventSignatures(ctx context.Context, e PDU, verifier JSONVerifier, userIDForSender spec.UserIDForSender) error {
+func VerifyEventSignatures(
+	ctx context.Context,
+	e PDU,
+	verifier JSONVerifier,
+	userIDForSender spec.UserIDForSender,
+) error {
 	if userIDForSender == nil {
 		panic("UserIDForSender func is nil")
 	}
@@ -119,7 +130,6 @@ func VerifyEventSignatures(ctx context.Context, e PDU, verifier JSONVerifier, us
 				needed[auth] = struct{}{}
 			}
 		}
-
 	}
 
 	redactedJSON, err := verImpl.RedactEventJSON(e.JSON())
@@ -167,14 +177,20 @@ func getMXIDMapping(e PDU) (*MXIDMapping, error) {
 
 	// if there is no mapping, we can't check the signature
 	if content.MXIDMapping == nil {
-		return nil, fmt.Errorf("missing mxid_mapping")
+		return nil, errors.New("missing mxid_mapping")
 	}
 
 	return content.MXIDMapping, nil
 }
 
-// validateMXIDMappingSignatures validates that the MXIDMapping is correctly signed
-func validateMXIDMappingSignatures(ctx context.Context, e PDU, mapping MXIDMapping, verifier JSONVerifier, verImpl IRoomVersion) error {
+// validateMXIDMappingSignatures validates that the MXIDMapping is correctly signed.
+func validateMXIDMappingSignatures(
+	ctx context.Context,
+	e PDU,
+	mapping MXIDMapping,
+	verifier JSONVerifier,
+	verImpl IRoomVersion,
+) error {
 	mappingBytes, err := json.Marshal(mapping)
 	if err != nil {
 		return err
@@ -354,7 +370,13 @@ func referenceOfEvent(eventJSON []byte, roomVersion RoomVersion) (eventReference
 }
 
 // SignEvent adds a ED25519 signature to the event for the given key.
-func signEvent(signingName string, keyID KeyID, privateKey ed25519.PrivateKey, eventJSON []byte, roomVersion RoomVersion) ([]byte, error) {
+func signEvent(
+	signingName string,
+	keyID KeyID,
+	privateKey ed25519.PrivateKey,
+	eventJSON []byte,
+	roomVersion RoomVersion,
+) ([]byte, error) {
 	verImpl, err := GetRoomVersion(roomVersion)
 	if err != nil {
 		return nil, err

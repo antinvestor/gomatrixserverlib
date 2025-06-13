@@ -17,6 +17,7 @@ package gomatrixserverlib
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
@@ -32,7 +33,12 @@ type KeyID string
 
 // SignJSON signs a JSON object returning a copy signed with the given key.
 // https://matrix.org/docs/spec/server_server/unstable.html#signing-json
-func SignJSON(signingName string, keyID KeyID, privateKey ed25519.PrivateKey, message []byte) (signed []byte, err error) {
+func SignJSON(
+	signingName string,
+	keyID KeyID,
+	privateKey ed25519.PrivateKey,
+	message []byte,
+) (signed []byte, err error) {
 	preserve := struct {
 		Signatures map[string]map[KeyID]spec.Base64Bytes `json:"signatures"`
 		Unsigned   json.RawMessage                       `json:"unsigned"`
@@ -75,7 +81,7 @@ func SignJSON(signingName string, keyID KeyID, privateKey ed25519.PrivateKey, me
 	if signed, err = CanonicalJSON(signed); err != nil {
 		return nil, err
 	}
-	return
+	return signed, err
 }
 
 // ListKeyIDs lists the key IDs a given entity has signed a message with.
@@ -106,7 +112,7 @@ func VerifyJSON(signingName string, keyID KeyID, publicKey ed25519.PublicKey, me
 
 	// Check that there is a signature from the entity that we are expecting a signature from.
 	if object["signatures"] == nil {
-		return fmt.Errorf("no signatures")
+		return errors.New("no signatures")
 	}
 	if err := json.Unmarshal(*object["signatures"], &signatures); err != nil {
 		return err

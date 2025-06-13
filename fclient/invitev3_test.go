@@ -15,9 +15,15 @@ func TestMarshalInviteV3Request(t *testing.T) {
 	eventType := "m.room.name"
 	stateKey := ""
 	prevEvents := []string{"upCsBqUhNUgT2/+zkzg8TbqdQpWWKQnZpGJc6KcbUC4"}
-	authEvents := []string{"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY", "X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko", "k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno"}
+	authEvents := []string{
+		"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY",
+		"X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko",
+		"k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno",
+	}
 	depth := int64(7)
-	signatures := json.RawMessage(`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`)
+	signatures := json.RawMessage(
+		`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`,
+	)
 	content := json.RawMessage(`{"name":"test3"}`)
 
 	output := gomatrixserverlib.ProtoEvent{
@@ -32,7 +38,11 @@ func TestMarshalInviteV3Request(t *testing.T) {
 		Content:    content,
 	}
 
-	inviteReq, err := NewInviteV3Request(output, gomatrixserverlib.RoomVersionPseudoIDs, []gomatrixserverlib.InviteStrippedState{})
+	inviteReq, err := NewInviteV3Request(
+		output,
+		gomatrixserverlib.RoomVersionPseudoIDs,
+		[]gomatrixserverlib.InviteStrippedState{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,21 +63,23 @@ func TestMarshalInviteV3Request(t *testing.T) {
 	}
 
 	if newRequest.RoomVersion() != gomatrixserverlib.RoomVersionPseudoIDs {
-		t.Fatalf("unmatched room version. expected: %v, got: %v", gomatrixserverlib.RoomVersionPseudoIDs, newRequest.RoomVersion())
+		t.Fatalf(
+			"unmatched room version. expected: %v, got: %v",
+			gomatrixserverlib.RoomVersionPseudoIDs,
+			newRequest.RoomVersion(),
+		)
 	}
 	if len(newRequest.InviteRoomState()) != 0 {
 		t.Fatalf("invite room state should not have any events")
 	}
 	if newRequest.Event().SenderID != senderID {
 		t.Fatalf("unmatched senderID. expected: %v, got: %v", newRequest.Event().SenderID, senderID)
-
 	}
 	if newRequest.Event().RoomID != roomID {
 		t.Fatalf("unmatched roomID. expected: %v, got: %v", newRequest.Event().RoomID, roomID)
 	}
 	if newRequest.Event().Type != eventType {
 		t.Fatalf("unmatched type. expected: %v, got: %v", newRequest.Event().Type, eventType)
-
 	}
 	if *newRequest.Event().StateKey != stateKey {
 		t.Fatalf("unmatched state key. expected: %v, got: %v", *newRequest.Event().StateKey, stateKey)

@@ -2,12 +2,12 @@ package fclient_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -35,7 +35,9 @@ func TestSendJoinFallback(t *testing.T) {
 	_, privateKey, _ := ed25519.GenerateKey(nil)
 	roomVerImpl, _ := gomatrixserverlib.GetRoomVersion((gomatrixserverlib.RoomVersionV1))
 	// we don't care about the actual contents, just that it ferries data across fine.
-	retEv := json.RawMessage(`{"auth_events":[],"content":{"creator":"@userid:baba.is.you"},"depth":0,"event_id":"$WCraVpPZe5TtHAqs:baba.is.you","hashes":{"sha256":"EehWNbKy+oDOMC0vIvYl1FekdDxMNuabXKUVzV7DG74"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"08aF4/bYWKrdGPFdXmZCQU6IrOE1ulpevmWBM3kiShJPAbRbZ6Awk7buWkIxlMF6kX3kb4QpbAlZfHLQgncjCw"}},"state_key":"","type":"m.room.create"}`)
+	retEv := json.RawMessage(
+		`{"auth_events":[],"content":{"creator":"@userid:baba.is.you"},"depth":0,"event_id":"$WCraVpPZe5TtHAqs:baba.is.you","hashes":{"sha256":"EehWNbKy+oDOMC0vIvYl1FekdDxMNuabXKUVzV7DG74"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"08aF4/bYWKrdGPFdXmZCQU6IrOE1ulpevmWBM3kiShJPAbRbZ6Awk7buWkIxlMF6kX3kb4QpbAlZfHLQgncjCw"}},"state_key":"","type":"m.room.create"}`,
+	)
 	wantRes := fclient.RespSendJoin{
 		StateEvents: gomatrixserverlib.EventJSONs{
 			retEv,
@@ -62,7 +64,7 @@ func TestSendJoinFallback(t *testing.T) {
 				fn: func(req *http.Request) (*http.Response, error) {
 					if strings.HasPrefix(req.URL.Path, "/_matrix/federation/v2/send_join") {
 						return &http.Response{
-							StatusCode: 404,
+							StatusCode: http.StatusNotFound,
 							Body:       io.NopCloser(strings.NewReader("404 not found")),
 						}, nil
 					}
@@ -71,7 +73,7 @@ func TestSendJoinFallback(t *testing.T) {
 					}
 					t.Logf("Sending response: %s", string(v1ResBytes))
 					return &http.Response{
-						StatusCode: 200,
+						StatusCode: http.StatusOK,
 						Body:       io.NopCloser(bytes.NewReader(v1ResBytes)),
 					}, nil
 				},
@@ -79,13 +81,15 @@ func TestSendJoinFallback(t *testing.T) {
 		),
 	)
 	ev, err := roomVerImpl.NewEventFromTrustedJSON(
-		[]byte(`{"auth_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"content":{"membership":"join"},"depth":1,"event_id":"$fnwGrQEpiOIUoDU2:baba.is.you","hashes":{"sha256":"DqOjdFgvFQ3V/jvQW2j3ygHL4D+t7/LaIPZ/tHTDZtI"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"qBWLb42zicQVsbh333YrcKpHfKokcUOM/ytldGlrgSdXqDEDDxvpcFlfadYnyvj3Z/GjA2XZkqKHanNEh575Bw"}},"state_key":"@userid:baba.is.you","type":"m.room.member"}`),
+		[]byte(
+			`{"auth_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"content":{"membership":"join"},"depth":1,"event_id":"$fnwGrQEpiOIUoDU2:baba.is.you","hashes":{"sha256":"DqOjdFgvFQ3V/jvQW2j3ygHL4D+t7/LaIPZ/tHTDZtI"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"qBWLb42zicQVsbh333YrcKpHfKokcUOM/ytldGlrgSdXqDEDDxvpcFlfadYnyvj3Z/GjA2XZkqKHanNEh575Bw"}},"state_key":"@userid:baba.is.you","type":"m.room.member"}`,
+		),
 		false,
 	)
 	if err != nil {
 		t.Fatalf("failed to read event json: %s", err)
 	}
-	res, err := fc.SendJoin(context.Background(), serverName, targetServerName, ev)
+	res, err := fc.SendJoin(t.Context(), serverName, targetServerName, ev)
 	if err != nil {
 		t.Fatalf("SendJoin returned an error: %s", err)
 	}
@@ -104,7 +108,9 @@ func TestSendJoinJSON(t *testing.T) {
 	_, privateKey, _ := ed25519.GenerateKey(nil)
 	roomVerImpl, _ := gomatrixserverlib.GetRoomVersion(gomatrixserverlib.RoomVersionV1)
 	// we don't care about the actual contents, just that it ferries data across fine.
-	retEv := json.RawMessage(`{"auth_events":[],"content":{"creator":"@userid:baba.is.you"},"depth":0,"event_id":"$WCraVpPZe5TtHAqs:baba.is.you","hashes":{"sha256":"EehWNbKy+oDOMC0vIvYl1FekdDxMNuabXKUVzV7DG74"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"08aF4/bYWKrdGPFdXmZCQU6IrOE1ulpevmWBM3kiShJPAbRbZ6Awk7buWkIxlMF6kX3kb4QpbAlZfHLQgncjCw"}},"state_key":"","type":"m.room.create"}`)
+	retEv := json.RawMessage(
+		`{"auth_events":[],"content":{"creator":"@userid:baba.is.you"},"depth":0,"event_id":"$WCraVpPZe5TtHAqs:baba.is.you","hashes":{"sha256":"EehWNbKy+oDOMC0vIvYl1FekdDxMNuabXKUVzV7DG74"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"08aF4/bYWKrdGPFdXmZCQU6IrOE1ulpevmWBM3kiShJPAbRbZ6Awk7buWkIxlMF6kX3kb4QpbAlZfHLQgncjCw"}},"state_key":"","type":"m.room.create"}`,
+	)
 	respSendJoinResponseJSON := []byte(fmt.Sprintf(`{
 		"state": [%s],
 		"auth_chain": [%s]
@@ -125,12 +131,12 @@ func TestSendJoinJSON(t *testing.T) {
 					if strings.HasPrefix(req.URL.Path, "/_matrix/federation/v2/send_join") {
 						t.Logf("Sending response: %s", string(respSendJoinResponseJSON))
 						return &http.Response{
-							StatusCode: 200,
+							StatusCode: http.StatusOK,
 							Body:       io.NopCloser(bytes.NewReader(respSendJoinResponseJSON)),
 						}, nil
 					}
 					return &http.Response{
-						StatusCode: 404,
+						StatusCode: http.StatusNotFound,
 						Body:       io.NopCloser(strings.NewReader("404 not found")),
 					}, nil
 				},
@@ -138,14 +144,16 @@ func TestSendJoinJSON(t *testing.T) {
 		),
 	)
 	ev, err := roomVerImpl.NewEventFromTrustedJSON(
-		[]byte(`{"auth_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"content":{"membership":"join"},"depth":1,"event_id":"$fnwGrQEpiOIUoDU2:baba.is.you","hashes":{"sha256":"DqOjdFgvFQ3V/jvQW2j3ygHL4D+t7/LaIPZ/tHTDZtI"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"qBWLb42zicQVsbh333YrcKpHfKokcUOM/ytldGlrgSdXqDEDDxvpcFlfadYnyvj3Z/GjA2XZkqKHanNEh575Bw"}},"state_key":"@userid:baba.is.you","type":"m.room.member"}`),
+		[]byte(
+			`{"auth_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"content":{"membership":"join"},"depth":1,"event_id":"$fnwGrQEpiOIUoDU2:baba.is.you","hashes":{"sha256":"DqOjdFgvFQ3V/jvQW2j3ygHL4D+t7/LaIPZ/tHTDZtI"},"origin":"baba.is.you","origin_server_ts":0,"prev_events":[["$WCraVpPZe5TtHAqs:baba.is.you",{"sha256":"gBxQI2xzDLMoyIjkrpCJFBXC5NnrSemepc7SninSARI"}]],"prev_state":[],"room_id":"!roomid:baba.is.you","sender":"@userid:baba.is.you","signatures":{"baba.is.you":{"ed25519:auto":"qBWLb42zicQVsbh333YrcKpHfKokcUOM/ytldGlrgSdXqDEDDxvpcFlfadYnyvj3Z/GjA2XZkqKHanNEh575Bw"}},"state_key":"@userid:baba.is.you","type":"m.room.member"}`,
+		),
 		false,
 	)
 	if err != nil {
 		t.Fatalf("failed to read event json: %s", err)
 	}
 	t.Logf("%s - %#v", string(ev.JSON()), ev)
-	res, err := fc.SendJoin(context.Background(), serverName, targetServerName, ev)
+	res, err := fc.SendJoin(t.Context(), serverName, targetServerName, ev)
 	if err != nil {
 		t.Fatalf("SendJoin returned an error: %s", err)
 	}
@@ -184,12 +192,12 @@ func TestSendTransactionToRelay(t *testing.T) {
 				fn: func(req *http.Request) (*http.Response, error) {
 					if strings.HasPrefix(req.URL.Path, "/_matrix/federation/v1/send_relay") {
 						return &http.Response{
-							StatusCode: 200,
+							StatusCode: http.StatusOK,
 							Body:       io.NopCloser(bytes.NewReader(respSendResponseJSON)),
 						}, nil
 					}
 					return &http.Response{
-						StatusCode: 404,
+						StatusCode: http.StatusNotFound,
 						Body:       io.NopCloser(strings.NewReader("404 not found")),
 					}, nil
 				},
@@ -199,7 +207,7 @@ func TestSendTransactionToRelay(t *testing.T) {
 
 	txn := createTransaction(serverName, targetServerName, *user)
 	forwardingServer := spec.ServerName("mailbox.server")
-	_, err = fc.P2PSendTransactionToRelay(context.Background(), *user, txn, forwardingServer)
+	_, err = fc.P2PSendTransactionToRelay(t.Context(), *user, txn, forwardingServer)
 	if err != nil {
 		t.Fatalf("P2PSendTransactionToRelay returned an error: %s", err)
 	}
@@ -231,12 +239,12 @@ func TestSendTransactionToRelayReportsFailure(t *testing.T) {
 				fn: func(req *http.Request) (*http.Response, error) {
 					if strings.HasPrefix(req.URL.Path, "/_matrix/federation/v1/send_relay") {
 						return &http.Response{
-							StatusCode: 400,
+							StatusCode: http.StatusBadRequest,
 							Body:       io.NopCloser(bytes.NewReader(respSendResponseJSON)),
 						}, nil
 					}
 					return &http.Response{
-						StatusCode: 404,
+						StatusCode: http.StatusNotFound,
 						Body:       io.NopCloser(strings.NewReader("404 not found")),
 					}, nil
 				},
@@ -246,7 +254,7 @@ func TestSendTransactionToRelayReportsFailure(t *testing.T) {
 
 	txn := createTransaction(serverName, targetServerName, *user)
 	forwardingServer := spec.ServerName("mailbox.server")
-	_, err = fc.P2PSendTransactionToRelay(context.Background(), *user, txn, forwardingServer)
+	_, err = fc.P2PSendTransactionToRelay(t.Context(), *user, txn, forwardingServer)
 	if err == nil {
 		t.Fatalf("P2PSendTransactionToRelay didn't return an error")
 	}
@@ -262,10 +270,12 @@ func createTransaction(
 ) gomatrixserverlib.Transaction {
 	txn := gomatrixserverlib.Transaction{}
 	txn.PDUs = []json.RawMessage{
-		[]byte(`{"auth_events":[["$0ok8ynDp7kjc95e3:kaer.morhen",{"sha256":"sWCi6Ckp9rDimQON+MrUlNRkyfZ2tjbPbWfg2NMB18Q"}],["$LEwEu0kxrtu5fOiS:kaer.morhen",{"sha256":"1aKajq6DWHru1R1HJjvdWMEavkJJHGaTmPvfuERUXaA"}]],"content":{"body":"Test Message"},"depth":5,"event_id":"$gl2T9l3qm0kUbiIJ:kaer.morhen","hashes":{"sha256":"Qx3nRMHLDPSL5hBAzuX84FiSSP0K0Kju2iFoBWH4Za8"},"origin":"kaer.morhen","origin_server_ts":0,"prev_events":[["$UKNe10XzYzG0TeA9:kaer.morhen",{"sha256":"KtSRyMjt0ZSjsv2koixTRCxIRCGoOp6QrKscsW97XRo"}]],"room_id":"!roomid:kaer.morhen","sender":"@userid:kaer.morhen","signatures":{"kaer.morhen":{"ed25519:auto":"sqDgv3EG7ml5VREzmT9aZeBpS4gAPNIaIeJOwqjDhY0GPU/BcpX5wY4R7hYLrNe5cChgV+eFy/GWm1Zfg5FfDg"}},"type":"m.room.message"}`),
+		[]byte(
+			`{"auth_events":[["$0ok8ynDp7kjc95e3:kaer.morhen",{"sha256":"sWCi6Ckp9rDimQON+MrUlNRkyfZ2tjbPbWfg2NMB18Q"}],["$LEwEu0kxrtu5fOiS:kaer.morhen",{"sha256":"1aKajq6DWHru1R1HJjvdWMEavkJJHGaTmPvfuERUXaA"}]],"content":{"body":"Test Message"},"depth":5,"event_id":"$gl2T9l3qm0kUbiIJ:kaer.morhen","hashes":{"sha256":"Qx3nRMHLDPSL5hBAzuX84FiSSP0K0Kju2iFoBWH4Za8"},"origin":"kaer.morhen","origin_server_ts":0,"prev_events":[["$UKNe10XzYzG0TeA9:kaer.morhen",{"sha256":"KtSRyMjt0ZSjsv2koixTRCxIRCGoOp6QrKscsW97XRo"}]],"room_id":"!roomid:kaer.morhen","sender":"@userid:kaer.morhen","signatures":{"kaer.morhen":{"ed25519:auto":"sqDgv3EG7ml5VREzmT9aZeBpS4gAPNIaIeJOwqjDhY0GPU/BcpX5wY4R7hYLrNe5cChgV+eFy/GWm1Zfg5FfDg"}},"type":"m.room.message"}`,
+		),
 	}
 	txn.Origin = testOrigin
-	txn.TransactionID = gomatrixserverlib.TransactionID(fmt.Sprintf("%d", time.Now().UnixNano()))
+	txn.TransactionID = gomatrixserverlib.TransactionID(strconv.FormatInt(time.Now().UnixNano(), 10))
 	txn.Destination = testDestination
 	var federationPathPrefixV1 = "/_matrix/federation/v1"
 	path := federationPathPrefixV1 + "/send_relay/" + string(txn.TransactionID) + "/" + userID.String()

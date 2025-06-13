@@ -24,12 +24,12 @@ import (
 	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
-// Event validation errors
+// Event validation errors.
 const (
 	EventValidationTooLarge int = 1
 )
 
-// EventValidationError is returned if there is a problem validating an event
+// EventValidationError is returned if there is a problem validating an event.
 type EventValidationError struct {
 	Message     string
 	Code        int
@@ -50,7 +50,7 @@ type eventFields struct {
 	Depth          int64           `json:"depth"`
 	Unsigned       json.RawMessage `json:"unsigned,omitempty"`
 	OriginServerTS spec.Timestamp  `json:"origin_server_ts"`
-	//Origin         spec.ServerName `json:"origin"`
+	// Origin         spec.ServerName `json:"origin"`
 }
 
 var emptyEventReferenceList = []eventReference{}
@@ -67,31 +67,36 @@ const (
 
 func checkID(id, kind string, sigil byte) (err error) {
 	if _, err = domainFromID(id); err != nil {
-		return
+		return err
 	}
 	if id[0] != sigil {
 		err = fmt.Errorf(
 			"gomatrixserverlib: invalid %s ID, wanted first byte to be '%c' got '%c'",
 			kind, sigil, id[0],
 		)
-		return
+		return err
 	}
 	if l := utf8.RuneCountInString(id); l > maxIDLength {
 		err = EventValidationError{
 			Code:    EventValidationTooLarge,
 			Message: fmt.Sprintf("gomatrixserverlib: %s ID is too long, length %d > maximum %d", kind, l, maxIDLength),
 		}
-		return
+		return err
 	}
 	if l := len(id); l > maxIDLength {
 		err = EventValidationError{
-			Code:        EventValidationTooLarge,
-			Message:     fmt.Sprintf("gomatrixserverlib: %s ID is too long, length %d bytes > maximum %d bytes", kind, l, maxIDLength),
+			Code: EventValidationTooLarge,
+			Message: fmt.Sprintf(
+				"gomatrixserverlib: %s ID is too long, length %d bytes > maximum %d bytes",
+				kind,
+				l,
+				maxIDLength,
+			),
 			Persistable: true,
 		}
-		return
+		return err
 	}
-	return
+	return err
 }
 
 // SplitID splits a matrix ID into a local part and a server name.

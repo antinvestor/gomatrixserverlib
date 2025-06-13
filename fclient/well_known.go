@@ -38,7 +38,7 @@ func LookupWellKnown(ctx context.Context, serverNameType spec.ServerName) (*Well
 	wellKnownPath := "/.well-known/matrix/server"
 
 	// Request server's well-known record
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://"+serverName+wellKnownPath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+serverName+wellKnownPath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func LookupWellKnown(ctx context.Context, serverNameType spec.ServerName) (*Well
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, errNoWellKnown
 	}
 

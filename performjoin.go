@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -46,7 +47,7 @@ func PerformJoin(
 			ServerName: input.ServerName,
 			Transient:  false,
 			Reachable:  false,
-			Err:        fmt.Errorf("UserID is nil"),
+			Err:        errors.New("UserID is nil"),
 		}
 	}
 	if input.RoomID == nil {
@@ -54,7 +55,7 @@ func PerformJoin(
 			ServerName: input.ServerName,
 			Transient:  false,
 			Reachable:  false,
-			Err:        fmt.Errorf("RoomID is nil"),
+			Err:        errors.New("RoomID is nil"),
 		}
 	}
 	if input.KeyRing == nil {
@@ -62,7 +63,7 @@ func PerformJoin(
 			ServerName: input.ServerName,
 			Transient:  false,
 			Reachable:  false,
-			Err:        fmt.Errorf("KeyRing is nil"),
+			Err:        errors.New("KeyRing is nil"),
 		}
 	}
 
@@ -123,13 +124,18 @@ func PerformJoin(
 	switch respMakeJoin.GetRoomVersion() {
 	case RoomVersionPseudoIDs:
 		// we successfully did a make_join, create a senderID for this user now
-		senderID, signingKey, err = input.GetOrCreateSenderID(ctx, *input.UserID, *input.RoomID, string(respMakeJoin.GetRoomVersion()))
+		senderID, signingKey, err = input.GetOrCreateSenderID(
+			ctx,
+			*input.UserID,
+			*input.RoomID,
+			string(respMakeJoin.GetRoomVersion()),
+		)
 		if err != nil {
 			return nil, &FederationError{
 				ServerName: input.ServerName,
 				Transient:  false,
 				Reachable:  true,
-				Err:        fmt.Errorf("cannot create user room key"),
+				Err:        errors.New("cannot create user room key"),
 			}
 		}
 		keyID = "ed25519:1"
@@ -300,7 +306,6 @@ func storeMXIDMappings(
 	keyRing JSONVerifier,
 	storeSenderID spec.StoreSenderIDFromPublicID,
 ) error {
-
 	log := util.Log(ctx)
 	for _, ev := range events {
 		if ev.Type() != spec.MRoomMember {
@@ -349,7 +354,7 @@ func setDefaultRoomVersionFromJoinEvent(
 
 // isWellFormedJoinMemberEvent returns true if the event looks like a legitimate
 // membership event.
-func isWellFormedJoinMemberEvent(event PDU, roomID *spec.RoomID, senderID spec.SenderID) bool { // nolint: interfacer
+func isWellFormedJoinMemberEvent(event PDU, roomID *spec.RoomID, senderID spec.SenderID) bool { //nolint: interfacer
 	if membership, err := event.Membership(); err != nil {
 		return false
 	} else if membership != spec.Join {
@@ -389,5 +394,5 @@ func checkEventsContainCreateEvent(events []PDU) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("response is missing m.room.create event")
+	return errors.New("response is missing m.room.create event")
 }

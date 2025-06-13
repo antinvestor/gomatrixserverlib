@@ -32,9 +32,5 @@ type Transaction struct {
 	EDUs []EDU `json:"edus,omitempty"`
 }
 
-// A TransactionID identifies a transaction sent by a matrix server to another
-// matrix server. The ID must be unique amongst the transactions sent from the
-// origin server to the destination, but doesn't have to be globally unique.
-// The ID must be safe to insert into a URL path segment. The ID should have a
-// format matching '^[0-9A-Za-z\-_]*$'
+// format matching '^[0-9A-Za-z\-_]*$'.
 type TransactionID string

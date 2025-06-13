@@ -16,9 +16,8 @@
 package gomatrixserverlib
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -29,21 +28,21 @@ import (
 )
 
 func BenchmarkLevelJSONValueInt(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		var value []levelJSONValue
 		_ = json.Unmarshal([]byte(`[1, 2, 3]`), &value)
 	}
 }
 
 func BenchmarkLevelJSONValueFloat(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		var value []levelJSONValue
 		_ = json.Unmarshal([]byte(`[1.1, 1.2, 1.3]`), &value)
 	}
 }
 
 func BenchmarkLevelJSONValueString(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		var value []levelJSONValue
 		_ = json.Unmarshal([]byte(`["1", "2", "3"]`), &value)
 	}
@@ -177,7 +176,6 @@ func TestHistoryVisibility_Scan(t *testing.T) {
 			if !tt.wantErr && tt.h != tt.wantVisibility {
 				t.Errorf("Scan() want = %v, got %v", tt.wantVisibility, tt.h)
 			}
-
 		})
 	}
 }
@@ -219,12 +217,12 @@ func TestMXIDMapping_SignValidate(t *testing.T) {
 	// this should pass
 	evMapping, err := getMXIDMapping(ev)
 	assert.NoError(t, err)
-	err = validateMXIDMappingSignatures(context.Background(), ev, *evMapping, &StubVerifier{}, verImpl)
+	err = validateMXIDMappingSignatures(t.Context(), ev, *evMapping, &StubVerifier{}, verImpl)
 	assert.NoError(t, err)
 
 	// this fails, for some random reason
-	err = validateMXIDMappingSignatures(context.Background(), ev, *evMapping, &StubVerifier{
-		results: []VerifyJSONResult{{Error: fmt.Errorf("err")}},
+	err = validateMXIDMappingSignatures(t.Context(), ev, *evMapping, &StubVerifier{
+		results: []VerifyJSONResult{{Error: errors.New("err")}},
 	}, verImpl)
 	assert.Error(t, err)
 

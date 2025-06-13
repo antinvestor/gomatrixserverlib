@@ -36,9 +36,9 @@ func (h HexString) MarshalJSON() ([]byte, error) {
 func (h *HexString) UnmarshalJSON(raw []byte) (err error) {
 	var str string
 	if err = json.Unmarshal(raw, &str); err != nil {
-		return
+		return err
 	}
 
 	*h, err = hex.DecodeString(str)
-	return
+	return err
 }

@@ -16,11 +16,19 @@ func TestValidUserIDs(t *testing.T) {
 		domain           string
 		allowHistoricIDs bool
 	}{
-		"basic":                    {localpart: defaultLocalpart, domain: defaultDomain, allowHistoricIDs: false},
-		"extensive_local":          {localpart: "abcdefghijklmnopqrstuvwxyz0123456789._=-/", domain: defaultDomain, allowHistoricIDs: false},
-		"extensive_local_historic": {localpart: "!\"#$%&'()*+,-./0123456789;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~", domain: defaultDomain, allowHistoricIDs: true},
-		"domain_with_port":         {localpart: defaultLocalpart, domain: "domain.org:80", allowHistoricIDs: false},
-		"minimum_id":               {localpart: "a", domain: "1", allowHistoricIDs: false},
+		"basic": {localpart: defaultLocalpart, domain: defaultDomain, allowHistoricIDs: false},
+		"extensive_local": {
+			localpart:        "abcdefghijklmnopqrstuvwxyz0123456789._=-/",
+			domain:           defaultDomain,
+			allowHistoricIDs: false,
+		},
+		"extensive_local_historic": {
+			localpart:        "!\"#$%&'()*+,-./0123456789;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+			domain:           defaultDomain,
+			allowHistoricIDs: true,
+		},
+		"domain_with_port": {localpart: defaultLocalpart, domain: "domain.org:80", allowHistoricIDs: false},
+		"minimum_id":       {localpart: "a", domain: "1", allowHistoricIDs: false},
 	}
 
 	for name, tc := range tests {
@@ -59,7 +67,7 @@ func TestInvalidUserIDs(t *testing.T) {
 		"too_long": {rawUserID: func() string {
 			userID := "@a:"
 			domain := ""
-			for i := 0; i < 255-len(userID)+1; i++ {
+			for range 255 - len(userID) + 1 {
 				domain = domain + "a"
 			}
 

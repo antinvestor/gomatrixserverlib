@@ -2,6 +2,7 @@ package gomatrixserverlib
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -48,13 +49,13 @@ type EventBuilder struct {
 // SetContent sets the JSON content key of the event.
 func (eb *EventBuilder) SetContent(content interface{}) (err error) {
 	eb.Content, err = json.Marshal(content)
-	return
+	return err
 }
 
 // SetUnsigned sets the JSON unsigned key of the event.
 func (eb *EventBuilder) SetUnsigned(unsigned interface{}) (err error) {
 	eb.Unsigned, err = json.Marshal(unsigned)
-	return
+	return err
 }
 
 func (eb *EventBuilder) AddAuthEvents(provider AuthEventProvider) error {
@@ -127,7 +128,7 @@ func (eb *EventBuilder) Build(
 	privateKey ed25519.PrivateKey,
 ) (result PDU, err error) {
 	if eb.version == nil {
-		return nil, fmt.Errorf("EventBuilder.Build: unknown version, did you create this via NewEventBuilder?")
+		return nil, errors.New("EventBuilder.Build: unknown version, did you create this via NewEventBuilder?")
 	}
 
 	eventFormat := eb.version.EventFormat()
@@ -185,25 +186,25 @@ func (eb *EventBuilder) Build(
 
 	var eventJSON []byte
 	if eventJSON, err = json.Marshal(&eventStruct); err != nil {
-		return
+		return result, err
 	}
 
 	if eventFormat == EventFormatV2 {
 		if eventJSON, err = sjson.DeleteBytes(eventJSON, "event_id"); err != nil {
-			return
+			return result, err
 		}
 	}
 
 	if eventJSON, err = addContentHashesToEvent(eventJSON); err != nil {
-		return
+		return result, err
 	}
 
 	if eventJSON, err = signEvent(string(origin), keyID, privateKey, eventJSON, eb.version.Version()); err != nil {
-		return
+		return result, err
 	}
 
 	if eventJSON, err = EnforcedCanonicalJSON(eventJSON, eb.version.Version()); err != nil {
-		return
+		return result, err
 	}
 
 	res, err := eb.version.NewEventFromTrustedJSON(eventJSON, false)

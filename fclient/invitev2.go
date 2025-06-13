@@ -18,14 +18,14 @@ func NewInviteV2Request(event gomatrixserverlib.PDU, state []gomatrixserverlib.I
 		err = gomatrixserverlib.UnsupportedRoomVersionError{
 			Version: event.Version(),
 		}
-		return
+		return request, err
 	}
 	request.fields.inviteV2RequestHeaders = inviteV2RequestHeaders{
 		RoomVersion:     event.Version(),
 		InviteRoomState: state,
 	}
 	request.fields.Event = event
-	return
+	return request, err
 }
 
 type inviteV2RequestHeaders struct {
@@ -41,12 +41,12 @@ type InviteV2Request struct {
 	}
 }
 
-// MarshalJSON implements json.Marshaller
+// MarshalJSON implements json.Marshaller.
 func (i InviteV2Request) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.fields)
 }
 
-// UnmarshalJSON implements json.Unmarshaller
+// UnmarshalJSON implements json.Unmarshaller.
 func (i *InviteV2Request) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &i.fields.inviteV2RequestHeaders)
 	if err != nil {

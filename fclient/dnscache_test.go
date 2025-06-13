@@ -32,7 +32,7 @@ func mustCreateCache(size int, lifetime time.Duration) *DNSCache {
 
 func TestDNSCache(t *testing.T) {
 	cache := mustCreateCache(1, time.Second)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// STEP 1: First we'll start with first.com.
 

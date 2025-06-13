@@ -22,10 +22,10 @@ import (
 	"github.com/antinvestor/gomatrixserverlib/spec"
 )
 
-// TopologicalOrder represents how to sort a list of events, used primarily in ReverseTopologicalOrdering
+// TopologicalOrder represents how to sort a list of events, used primarily in ReverseTopologicalOrdering.
 type TopologicalOrder int
 
-// Sort events by prev_events or auth_events
+// Sort events by prev_events or auth_events.
 const (
 	TopologicalOrderByPrevEvents TopologicalOrder = iota + 1
 	TopologicalOrderByAuthEvents
@@ -433,7 +433,7 @@ func (r *stateResolverV2) getFirstPowerLevelMainlineEvent(event PDU) (
 	// Start the iterator with the supplied event.
 	iter(event)
 
-	return
+	return mainlineEvent, mainlinePosition, steps
 }
 
 // authAndApplyEvents iterates through the supplied list of events and auths

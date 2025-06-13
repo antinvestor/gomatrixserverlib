@@ -3,6 +3,7 @@ package fclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -25,31 +26,104 @@ type FederationClient interface {
 
 	// Perform operations
 	LookupRoomAlias(ctx context.Context, origin, s spec.ServerName, roomAlias string) (res RespDirectory, err error)
-	Peek(ctx context.Context, origin, s spec.ServerName, roomID, peekID string, roomVersions []gomatrixserverlib.RoomVersion) (res RespPeek, err error)
+	Peek(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomID, peekID string,
+		roomVersions []gomatrixserverlib.RoomVersion,
+	) (res RespPeek, err error)
 	MakeJoin(ctx context.Context, origin, s spec.ServerName, roomID, userID string) (res RespMakeJoin, err error)
 	SendJoin(ctx context.Context, origin, s spec.ServerName, event gomatrixserverlib.PDU) (res RespSendJoin, err error)
-	SendJoinPartialState(ctx context.Context, origin, s spec.ServerName, event gomatrixserverlib.PDU) (res RespSendJoin, err error)
+	SendJoinPartialState(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		event gomatrixserverlib.PDU,
+	) (res RespSendJoin, err error)
 	MakeLeave(ctx context.Context, origin, s spec.ServerName, roomID, userID string) (res RespMakeLeave, err error)
 	SendLeave(ctx context.Context, origin, s spec.ServerName, event gomatrixserverlib.PDU) (err error)
 	SendInviteV2(ctx context.Context, origin, s spec.ServerName, request InviteV2Request) (res RespInviteV2, err error)
-	SendInviteV3(ctx context.Context, origin, s spec.ServerName, request InviteV3Request, userID spec.UserID) (res RespInviteV2, err error)
-	MakeKnock(ctx context.Context, origin, s spec.ServerName, roomID, userID string, roomVersions []gomatrixserverlib.RoomVersion) (res RespMakeKnock, err error)
-	SendKnock(ctx context.Context, origin, s spec.ServerName, event gomatrixserverlib.PDU) (res RespSendKnock, err error)
+	SendInviteV3(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		request InviteV3Request,
+		userID spec.UserID,
+	) (res RespInviteV2, err error)
+	MakeKnock(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomID, userID string,
+		roomVersions []gomatrixserverlib.RoomVersion,
+	) (res RespMakeKnock, err error)
+	SendKnock(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		event gomatrixserverlib.PDU,
+	) (res RespSendKnock, err error)
 
-	GetEvent(ctx context.Context, origin, s spec.ServerName, eventID string) (res gomatrixserverlib.Transaction, err error)
+	GetEvent(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		eventID string,
+	) (res gomatrixserverlib.Transaction, err error)
 
-	GetEventAuth(ctx context.Context, origin, s spec.ServerName, roomVersion gomatrixserverlib.RoomVersion, roomID, eventID string) (res RespEventAuth, err error)
+	GetEventAuth(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomVersion gomatrixserverlib.RoomVersion,
+		roomID, eventID string,
+	) (res RespEventAuth, err error)
 	GetUserDevices(ctx context.Context, origin, s spec.ServerName, userID string) (RespUserDevices, error)
-	ClaimKeys(ctx context.Context, origin, s spec.ServerName, oneTimeKeys map[string]map[string]string) (RespClaimKeys, error)
+	ClaimKeys(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		oneTimeKeys map[string]map[string]string,
+	) (RespClaimKeys, error)
 	QueryKeys(ctx context.Context, origin, s spec.ServerName, keys map[string][]string) (RespQueryKeys, error)
-	Backfill(ctx context.Context, origin, s spec.ServerName, roomID string, limit int, eventIDs []string) (res gomatrixserverlib.Transaction, err error)
-	MSC2836EventRelationships(ctx context.Context, origin, dst spec.ServerName, r MSC2836EventRelationshipsRequest, roomVersion gomatrixserverlib.RoomVersion) (res MSC2836EventRelationshipsResponse, err error)
-	RoomHierarchy(ctx context.Context, origin, dst spec.ServerName, roomID string, suggestedOnly bool) (res RoomHierarchyResponse, err error)
+	Backfill(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomID string,
+		limit int,
+		eventIDs []string,
+	) (res gomatrixserverlib.Transaction, err error)
+	MSC2836EventRelationships(
+		ctx context.Context,
+		origin, dst spec.ServerName,
+		r MSC2836EventRelationshipsRequest,
+		roomVersion gomatrixserverlib.RoomVersion,
+	) (res MSC2836EventRelationshipsResponse, err error)
+	RoomHierarchy(
+		ctx context.Context,
+		origin, dst spec.ServerName,
+		roomID string,
+		suggestedOnly bool,
+	) (res RoomHierarchyResponse, err error)
 
-	ExchangeThirdPartyInvite(ctx context.Context, origin, s spec.ServerName, builder gomatrixserverlib.ProtoEvent) (err error)
-	LookupState(ctx context.Context, origin, s spec.ServerName, roomID string, eventID string, roomVersion gomatrixserverlib.RoomVersion) (res RespState, err error)
-	LookupStateIDs(ctx context.Context, origin, s spec.ServerName, roomID string, eventID string) (res RespStateIDs, err error)
-	LookupMissingEvents(ctx context.Context, origin, s spec.ServerName, roomID string, missing MissingEvents, roomVersion gomatrixserverlib.RoomVersion) (res RespMissingEvents, err error)
+	ExchangeThirdPartyInvite(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		builder gomatrixserverlib.ProtoEvent,
+	) (err error)
+	LookupState(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomID string,
+		eventID string,
+		roomVersion gomatrixserverlib.RoomVersion,
+	) (res RespState, err error)
+	LookupStateIDs(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomID string,
+		eventID string,
+	) (res RespStateIDs, err error)
+	LookupMissingEvents(
+		ctx context.Context,
+		origin, s spec.ServerName,
+		roomID string,
+		missing MissingEvents,
+		roomVersion gomatrixserverlib.RoomVersion,
+	) (res RespMissingEvents, err error)
 
 	GetPublicRooms(
 		ctx context.Context, origin, s spec.ServerName, limit int, since string,
@@ -64,14 +138,27 @@ type FederationClient interface {
 		ctx context.Context, origin, s spec.ServerName, userID string, field string,
 	) (res RespProfile, err error)
 
-	DownloadMedia(ctx context.Context, origin, destination spec.ServerName, mediaID string) (res *http.Response, err error)
+	DownloadMedia(
+		ctx context.Context,
+		origin, destination spec.ServerName,
+		mediaID string,
+	) (res *http.Response, err error)
 
-	P2PSendTransactionToRelay(ctx context.Context, u spec.UserID, t gomatrixserverlib.Transaction, forwardingServer spec.ServerName) (res EmptyResp, err error)
-	P2PGetTransactionFromRelay(ctx context.Context, u spec.UserID, prev RelayEntry, relayServer spec.ServerName) (res RespGetRelayTransaction, err error)
+	P2PSendTransactionToRelay(
+		ctx context.Context,
+		u spec.UserID,
+		t gomatrixserverlib.Transaction,
+		forwardingServer spec.ServerName,
+	) (res EmptyResp, err error)
+	P2PGetTransactionFromRelay(
+		ctx context.Context,
+		u spec.UserID,
+		prev RelayEntry,
+		relayServer spec.ServerName,
+	) (res RespGetRelayTransaction, err error)
 }
 
-// A FederationClient is a matrix federation client that adds
-// "Authorization: X-Matrix" headers to requests that need ed25519 signatures
+// "Authorization: X-Matrix" headers to requests that need ed25519 signatures.
 type federationClient struct {
 	Client
 	identities []*SigningIdentity
@@ -100,7 +187,11 @@ func NewFederationClient(
 	}
 }
 
-func (ac *federationClient) DoRequestAndParseResponse(ctx context.Context, req *http.Request, result interface{}) error {
+func (ac *federationClient) DoRequestAndParseResponse(
+	ctx context.Context,
+	req *http.Request,
+	result interface{},
+) error {
 	return ac.Client.DoRequestAndParseResponse(ctx, req, result)
 }
 
@@ -131,17 +222,17 @@ var federationPathPrefixV1 = "/_matrix/federation/v1"
 var federationPathPrefixV2 = "/_matrix/federation/v2"
 var federationPathPrefixV3 = "/_matrix/federation/v3"
 
-// SendTransaction sends a transaction
+// SendTransaction sends a transaction.
 func (ac *federationClient) SendTransaction(
 	ctx context.Context, t gomatrixserverlib.Transaction,
 ) (res RespSend, err error) {
 	path := federationPathPrefixV1 + "/send/" + string(t.TransactionID)
 	req := NewFederationRequest("PUT", t.Origin, t.Destination, path)
 	if err = req.SetContent(t); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // P2PSendTransactionToRelay sends a transaction for forwarding to the destination.
@@ -153,10 +244,10 @@ func (ac *federationClient) P2PSendTransactionToRelay(
 		url.PathEscape(u.String())
 	req := NewFederationRequest("PUT", t.Origin, forwardingServer, path)
 	if err = req.SetContent(t); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // P2PGetTransactionFromRelay requests a transaction from a relay destined for this server.
@@ -166,10 +257,10 @@ func (ac *federationClient) P2PGetTransactionFromRelay(
 	path := federationPathPrefixV1 + "/relay_txn/" + url.PathEscape(u.String())
 	req := NewFederationRequest("GET", u.Domain(), relayServer, path)
 	if err = req.SetContent(prev); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // Creates a version query string with all the specified room versions, typically
@@ -218,7 +309,7 @@ func (ac *federationClient) MakeJoin(
 		url.PathEscape(userID) + versionQueryString
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // SendJoin sends a join m.room.member event obtained using MakeJoin via a
@@ -242,7 +333,7 @@ func (ac *federationClient) SendJoinPartialState(
 	return ac.sendJoin(ctx, origin, s, event, true)
 }
 
-// sendJoin is an internal implementation shared between SendJoin and SendJoinPartialState
+// sendJoin is an internal implementation shared between SendJoin and SendJoinPartialState.
 func (ac *federationClient) sendJoin(
 	ctx context.Context, origin, s spec.ServerName, event gomatrixserverlib.PDU, partialState bool,
 ) (res RespSendJoin, err error) {
@@ -255,7 +346,7 @@ func (ac *federationClient) sendJoin(
 
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(event); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
 	gerr, ok := err.(gomatrix.HTTPError)
@@ -266,7 +357,7 @@ func (ac *federationClient) sendJoin(
 			url.PathEscape(event.EventID())
 		v1req := NewFederationRequest("PUT", origin, s, v1path)
 		if err = v1req.SetContent(event); err != nil {
-			return
+			return res, err
 		}
 		var v1Res []json.RawMessage
 		err = ac.doRequest(ctx, v1req, &v1Res)
@@ -274,7 +365,7 @@ func (ac *federationClient) sendJoin(
 			err = json.Unmarshal(v1Res[1], &res)
 		}
 	}
-	return
+	return res, err
 }
 
 // MakeKnock makes a join m.room.member event for a room on a remote matrix server.
@@ -295,7 +386,7 @@ func (ac *federationClient) MakeKnock(
 		url.PathEscape(userID) + versionQueryString
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // SendKnock sends a join m.room.member event obtained using MakeKnock via a
@@ -311,10 +402,10 @@ func (ac *federationClient) SendKnock(
 
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(event); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // MakeLeave makes a leave m.room.member event for a room on a remote matrix server.
@@ -330,7 +421,7 @@ func (ac *federationClient) MakeLeave(
 		url.PathEscape(userID)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // SendLeave sends a leave m.room.member event obtained using MakeLeave via a
@@ -345,7 +436,7 @@ func (ac *federationClient) SendLeave(
 		url.PathEscape(event.EventID())
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(event); err != nil {
-		return
+		return err
 	}
 	res := struct{}{}
 	err = ac.doRequest(ctx, req, &res)
@@ -357,7 +448,7 @@ func (ac *federationClient) SendLeave(
 			url.PathEscape(event.EventID())
 		v1req := NewFederationRequest("PUT", origin, s, v1path)
 		if err = v1req.SetContent(event); err != nil {
-			return
+			return err
 		}
 		var v1Res []json.RawMessage
 		err = ac.doRequest(ctx, v1req, &v1Res)
@@ -365,7 +456,7 @@ func (ac *federationClient) SendLeave(
 			err = json.Unmarshal(v1Res[1], &res)
 		}
 	}
-	return
+	return err
 }
 
 // SendInvite sends an invite m.room.member event to an invited server to be
@@ -378,10 +469,10 @@ func (ac *federationClient) SendInvite(
 		url.PathEscape(event.EventID())
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(event); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // SendInviteV2 sends an invite m.room.member event to an invited server to be
@@ -395,7 +486,7 @@ func (ac *federationClient) SendInviteV2(
 		url.PathEscape(event.EventID())
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(request); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
 
@@ -405,15 +496,15 @@ func (ac *federationClient) SendInviteV2(
 		var resp RespInvite
 		resp, err = ac.SendInvite(ctx, origin, s, request.Event())
 		if err != nil {
-			return
+			return res, err
 		}
 		// assume v1 as per spec: https://matrix.org/docs/spec/server_server/latest#put-matrix-federation-v1-invite-roomid-eventid
 		// Servers which receive a v1 invite request must assume that the room version is either "1" or "2".
-		res = RespInviteV2{ // nolint:staticcheck
+		res = RespInviteV2{ //nolint:staticcheck
 			Event: resp.Event,
 		}
 	}
-	return
+	return res, err
 }
 
 // SendInviteV3 sends an invite m.room.member event to an invited server to be
@@ -427,10 +518,10 @@ func (ac *federationClient) SendInviteV3(
 		url.PathEscape(userID.String())
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(request); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // ExchangeThirdPartyInvite sends the builder of a m.room.member event of
@@ -445,11 +536,11 @@ func (ac *federationClient) ExchangeThirdPartyInvite(
 		url.PathEscape(proto.RoomID)
 	req := NewFederationRequest("PUT", origin, s, path)
 	if err = req.SetContent(proto); err != nil {
-		return
+		return err
 	}
 	res := struct{}{}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return err
 }
 
 // LookupState retrieves the room state for a room at an event from a
@@ -463,7 +554,7 @@ func (ac *federationClient) LookupState(
 		url.QueryEscape(eventID)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // LookupStateIDs retrieves the room state for a room at an event from a
@@ -477,7 +568,7 @@ func (ac *federationClient) LookupStateIDs(
 		url.QueryEscape(eventID)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // LookupMissingEvents asks a remote server for missing events within a
@@ -491,13 +582,13 @@ func (ac *federationClient) LookupMissingEvents(
 		url.PathEscape(roomID)
 	req := NewFederationRequest("POST", origin, s, path)
 	if err = req.SetContent(missing); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
-// Peek starts a peek on a remote server: see MSC2753
+// Peek starts a peek on a remote server: see MSC2753.
 func (ac *federationClient) Peek(
 	ctx context.Context, origin, s spec.ServerName, roomID, peekID string,
 	roomVersions []gomatrixserverlib.RoomVersion,
@@ -516,10 +607,10 @@ func (ac *federationClient) Peek(
 	req := NewFederationRequest("PUT", origin, s, path)
 	var empty struct{}
 	if err = req.SetContent(empty); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // LookupRoomAlias looks up a room alias hosted on the remote server.
@@ -534,7 +625,7 @@ func (ac *federationClient) LookupRoomAlias(
 		url.QueryEscape(roomAlias)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // GetPublicRooms gets all public rooms listed on the target homeserver's directory.
@@ -547,12 +638,12 @@ func (ac *federationClient) GetPublicRooms(
 	return ac.GetPublicRoomsFiltered(ctx, origin, s, limit, since, "", includeAllNetworks, thirdPartyInstanceID)
 }
 
-// searchTerm is used when querying e.g. remote public rooms
+// searchTerm is used when querying e.g. remote public rooms.
 type searchTerm struct {
 	GenericSearchTerm string `json:"generic_search_term,omitempty"`
 }
 
-// postPublicRoomsReq is a request to /publicRooms
+// postPublicRoomsReq is a request to /publicRooms.
 type postPublicRoomsReq struct {
 	PublicRoomsFilter    searchTerm `json:"filter,omitempty"`
 	Limit                int        `json:"limit,omitempty"`
@@ -569,7 +660,7 @@ func (ac *federationClient) GetPublicRoomsFiltered(
 	includeAllNetworks bool, thirdPartyInstanceID string,
 ) (res RespPublicRooms, err error) {
 	if includeAllNetworks && thirdPartyInstanceID != "" {
-		return res, fmt.Errorf("thirdPartyInstanceID can only be used if includeAllNetworks is false")
+		return res, errors.New("thirdPartyInstanceID can only be used if includeAllNetworks is false")
 	}
 
 	roomsReq := postPublicRoomsReq{
@@ -582,10 +673,10 @@ func (ac *federationClient) GetPublicRoomsFiltered(
 	path := federationPathPrefixV1 + "/publicRooms"
 	req := NewFederationRequest("POST", origin, s, path)
 	if err = req.SetContent(roomsReq); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // LookupProfile queries the profile of a user.
@@ -603,7 +694,7 @@ func (ac *federationClient) LookupProfile(
 	}
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // ClaimKeys claims E2E one-time keys from a remote server.
@@ -616,30 +707,38 @@ func (ac *federationClient) LookupProfile(
 //	}
 //
 // https://matrix.org/docs/spec/server_server/latest#post-matrix-federation-v1-user-keys-claim
-func (ac *federationClient) ClaimKeys(ctx context.Context, origin, s spec.ServerName, oneTimeKeys map[string]map[string]string) (res RespClaimKeys, err error) {
+func (ac *federationClient) ClaimKeys(
+	ctx context.Context,
+	origin, s spec.ServerName,
+	oneTimeKeys map[string]map[string]string,
+) (res RespClaimKeys, err error) {
 	path := federationPathPrefixV1 + "/user/keys/claim"
 	req := NewFederationRequest("POST", origin, s, path)
 	if err = req.SetContent(map[string]interface{}{
 		"one_time_keys": oneTimeKeys,
 	}); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // QueryKeys queries E2E device keys from a remote server.
 // https://matrix.org/docs/spec/server_server/latest#post-matrix-federation-v1-user-keys-query
-func (ac *federationClient) QueryKeys(ctx context.Context, origin, s spec.ServerName, keys map[string][]string) (res RespQueryKeys, err error) {
+func (ac *federationClient) QueryKeys(
+	ctx context.Context,
+	origin, s spec.ServerName,
+	keys map[string][]string,
+) (res RespQueryKeys, err error) {
 	path := federationPathPrefixV1 + "/user/keys/query"
 	req := NewFederationRequest("POST", origin, s, path)
 	if err = req.SetContent(map[string]interface{}{
 		"device_keys": keys,
 	}); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // GetEvent gets an event by ID from a remote server.
@@ -650,7 +749,7 @@ func (ac *federationClient) GetEvent(
 	path := federationPathPrefixV1 + "/event/" + url.PathEscape(eventID)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // GetEventAuth gets an event auth chain from a remote server.
@@ -661,7 +760,7 @@ func (ac *federationClient) GetEventAuth(
 	path := federationPathPrefixV1 + "/event_auth/" + url.PathEscape(roomID) + "/" + url.PathEscape(eventID)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // GetUserDevices returns a list of the user's devices from a remote server.
@@ -672,7 +771,7 @@ func (ac *federationClient) GetUserDevices(
 	path := federationPathPrefixV1 + "/user/devices/" + url.PathEscape(userID)
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // Backfill asks a homeserver for events early enough for them to not be in the
@@ -699,20 +798,23 @@ func (ac *federationClient) Backfill(
 	// Send the request.
 	req := NewFederationRequest("GET", origin, s, path)
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 // MSC2836EventRelationships performs an MSC2836 /event_relationships request.
 func (ac *federationClient) MSC2836EventRelationships(
-	ctx context.Context, origin, dst spec.ServerName, r MSC2836EventRelationshipsRequest, roomVersion gomatrixserverlib.RoomVersion,
+	ctx context.Context,
+	origin, dst spec.ServerName,
+	r MSC2836EventRelationshipsRequest,
+	roomVersion gomatrixserverlib.RoomVersion,
 ) (res MSC2836EventRelationshipsResponse, err error) {
 	path := "/_matrix/federation/unstable/event_relationships"
 	req := NewFederationRequest("POST", origin, dst, path)
 	if err = req.SetContent(r); err != nil {
-		return
+		return res, err
 	}
 	err = ac.doRequest(ctx, req, &res)
-	return
+	return res, err
 }
 
 func (ac *federationClient) RoomHierarchy(
@@ -736,7 +838,7 @@ func (ac *federationClient) RoomHierarchy(
 			err = ac.doRequest(ctx, req, &res)
 		}
 	}
-	return
+	return res, err
 }
 
 // DownloadMedia performs an authenticated federation request for a given mediaID.

@@ -47,7 +47,11 @@ func TestSimpleMatrixErrors(t *testing.T) {
 		"m_missing_param":            {errorString: "M_MISSING_PARAM", errorFunc: MissingParam},
 		"m_unable_to_authorise_join": {errorString: "M_UNABLE_TO_AUTHORISE_JOIN", errorFunc: UnableToAuthoriseJoin},
 		"m_unsupported_room_version": {errorString: "M_UNSUPPORTED_ROOM_VERSION", errorFunc: UnsupportedRoomVersion},
-		"m_server_not_trusted":       {errorString: "M_SERVER_NOT_TRUSTED", errorFunc: NotTrusted, customErrMsg: "Untrusted server 'error msg'"},
+		"m_server_not_trusted": {
+			errorString:  "M_SERVER_NOT_TRUSTED",
+			errorFunc:    NotTrusted,
+			customErrMsg: "Untrusted server 'error msg'",
+		},
 	}
 
 	for name, tc := range tests {

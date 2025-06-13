@@ -84,7 +84,7 @@ type eventReference struct {
 	EventSHA256 spec.Base64Bytes
 }
 
-// UnmarshalJSON implements json.Unmarshaller
+// UnmarshalJSON implements json.Unmarshaller.
 func (er *eventReference) UnmarshalJSON(data []byte) error {
 	var tuple []json.RawMessage
 	if err := json.Unmarshal(data, &tuple); err != nil {
@@ -94,19 +94,27 @@ func (er *eventReference) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("gomatrixserverlib: invalid event reference, invalid length: %d != 2", len(tuple))
 	}
 	if err := json.Unmarshal(tuple[0], &er.EventID); err != nil {
-		return fmt.Errorf("gomatrixserverlib: invalid event reference, first element is invalid: %q %v", string(tuple[0]), err)
+		return fmt.Errorf(
+			"gomatrixserverlib: invalid event reference, first element is invalid: %q %w",
+			string(tuple[0]),
+			err,
+		)
 	}
 	var hashes struct {
 		SHA256 spec.Base64Bytes `json:"sha256"`
 	}
 	if err := json.Unmarshal(tuple[1], &hashes); err != nil {
-		return fmt.Errorf("gomatrixserverlib: invalid event reference, second element is invalid: %q %v", string(tuple[1]), err)
+		return fmt.Errorf(
+			"gomatrixserverlib: invalid event reference, second element is invalid: %q %w",
+			string(tuple[1]),
+			err,
+		)
 	}
 	er.EventSHA256 = hashes.SHA256
 	return nil
 }
 
-// MarshalJSON implements json.Marshaller
+// MarshalJSON implements json.Marshaller.
 func (er eventReference) MarshalJSON() ([]byte, error) {
 	hashes := struct {
 		SHA256 spec.Base64Bytes `json:"sha256"`

@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -20,7 +20,7 @@ type TestRoomQuerier struct {
 
 func (r *TestRoomQuerier) IsKnownRoom(ctx context.Context, roomID spec.RoomID) (bool, error) {
 	if r.shouldFail {
-		return false, fmt.Errorf("failed finding room")
+		return false, errors.New("failed finding room")
 	}
 	return r.knownRoom, nil
 }
@@ -35,7 +35,7 @@ type TestStateQuerier struct {
 
 func (r *TestStateQuerier) GetAuthEvents(ctx context.Context, event PDU) (AuthEventProvider, error) {
 	if r.shouldFailAuth {
-		return nil, fmt.Errorf("failed getting auth provider")
+		return nil, errors.New("failed getting auth provider")
 	}
 
 	eventProvider, _ := NewAuthEvents(nil)
@@ -53,30 +53,40 @@ func (r *TestStateQuerier) GetAuthEvents(ctx context.Context, event PDU) (AuthEv
 	return eventProvider, nil
 }
 
-func (r *TestStateQuerier) GetState(ctx context.Context, roomID spec.RoomID, stateWanted []StateKeyTuple) ([]PDU, error) {
+func (r *TestStateQuerier) GetState(
+	ctx context.Context,
+	roomID spec.RoomID,
+	stateWanted []StateKeyTuple,
+) ([]PDU, error) {
 	if r.shouldFailState {
-		return nil, fmt.Errorf("failed getting state")
+		return nil, errors.New("failed getting state")
 	}
 	return r.state, nil
 }
 
 func TestHandleInvite(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:server")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	badRoom, err := spec.NewRoomID("!bad:room")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	stateKey := userID.String()
-	eb := createMemberEventBuilder(RoomVersionV10, userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	eb := createMemberEventBuilder(
+		RoomVersionV10,
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	inviteEvent, err := eb.Build(time.Now(), userID.Domain(), keyID, sk)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	stateKey = ""
 	createEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -265,23 +275,23 @@ func TestHandleInvite(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, joinErr := HandleInvite(context.Background(), tc.input)
+			_, joinErr := HandleInvite(t.Context(), tc.input)
 			if tc.expectedErr {
 				switch e := joinErr.(type) {
 				case nil:
 					t.Fatalf("Error should not be nil")
 				case spec.InternalServerError:
-					assert.Equal(t, tc.errType, InternalErr)
+					assert.Equal(t, InternalErr, tc.errType)
 				case spec.MatrixError:
-					assert.Equal(t, tc.errType, MatrixErr)
+					assert.Equal(t, MatrixErr, tc.errType)
 					assert.Equal(t, tc.errCode, e.ErrCode)
 				default:
 					t.Fatalf("Unexpected Error Type")
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.Nil(t, err)
-				assert.Nil(t, joinErr, string(jsonBytes))
+				assert.NoError(t, err)
+				assert.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -289,7 +299,7 @@ func TestHandleInvite(t *testing.T) {
 
 func TestHandleInviteNilVerifier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -298,7 +308,7 @@ func TestHandleInviteNilVerifier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	assert.Panics(t, func() {
-		_, _ = HandleInvite(context.Background(), HandleInviteInput{
+		_, _ = HandleInvite(t.Context(), HandleInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       "",
 			KeyID:             keyID,
@@ -314,7 +324,7 @@ func TestHandleInviteNilVerifier(t *testing.T) {
 
 func TestHandleInviteNilRoomQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -324,7 +334,7 @@ func TestHandleInviteNilRoomQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInvite(context.Background(), HandleInviteInput{
+		_, _ = HandleInvite(t.Context(), HandleInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       "",
 			KeyID:             keyID,
@@ -340,7 +350,7 @@ func TestHandleInviteNilRoomQuerier(t *testing.T) {
 
 func TestHandleInviteNilMembershipQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -350,7 +360,7 @@ func TestHandleInviteNilMembershipQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInvite(context.Background(), HandleInviteInput{
+		_, _ = HandleInvite(t.Context(), HandleInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       "",
 			KeyID:             keyID,
@@ -366,7 +376,7 @@ func TestHandleInviteNilMembershipQuerier(t *testing.T) {
 
 func TestHandleInviteNilStateQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -376,7 +386,7 @@ func TestHandleInviteNilStateQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInvite(context.Background(), HandleInviteInput{
+		_, _ = HandleInvite(t.Context(), HandleInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       "",
 			KeyID:             keyID,
@@ -392,7 +402,7 @@ func TestHandleInviteNilStateQuerier(t *testing.T) {
 
 func TestHandleInviteNilUserIDQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -402,7 +412,7 @@ func TestHandleInviteNilUserIDQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInvite(context.Background(), HandleInviteInput{
+		_, _ = HandleInvite(t.Context(), HandleInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       "",
 			KeyID:             keyID,
@@ -418,7 +428,7 @@ func TestHandleInviteNilUserIDQuerier(t *testing.T) {
 
 func TestHandleInviteNilContext(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -428,7 +438,7 @@ func TestHandleInviteNilContext(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInvite(nil, HandleInviteInput{ // nolint
+		_, _ = HandleInvite(nil, HandleInviteInput{ //nolint
 			RoomID:            *validRoom,
 			RoomVersion:       "",
 			KeyID:             keyID,
@@ -444,20 +454,25 @@ func TestHandleInviteNilContext(t *testing.T) {
 
 func TestHandleInviteV3(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:server")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	badRoom, err := spec.NewRoomID("!bad:room")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
-	assert.Nil(t, err)
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
+	assert.NoError(t, err)
 
 	stateKey = ""
 	createEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -673,23 +688,23 @@ func TestHandleInviteV3(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, joinErr := HandleInviteV3(context.Background(), tc.input)
+			_, joinErr := HandleInviteV3(t.Context(), tc.input)
 			if tc.expectedErr {
 				switch e := joinErr.(type) {
 				case nil:
 					t.Fatalf("Error should not be nil")
 				case spec.InternalServerError:
-					assert.Equal(t, tc.errType, InternalErr)
+					assert.Equal(t, InternalErr, tc.errType)
 				case spec.MatrixError:
-					assert.Equal(t, tc.errType, MatrixErr)
+					assert.Equal(t, MatrixErr, tc.errType)
 					assert.Equal(t, tc.errCode, e.ErrCode)
 				default:
 					t.Fatalf("Unexpected Error Type")
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.Nil(t, err)
-				assert.Nil(t, joinErr, string(jsonBytes))
+				assert.NoError(t, err)
+				assert.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -697,7 +712,7 @@ func TestHandleInviteV3(t *testing.T) {
 
 func TestHandleInviteV3NilVerifier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -706,7 +721,7 @@ func TestHandleInviteV3NilVerifier(t *testing.T) {
 	keyID := KeyID("ed25519:1234")
 
 	assert.Panics(t, func() {
-		_, _ = HandleInviteV3(context.Background(), HandleInviteV3Input{
+		_, _ = HandleInviteV3(t.Context(), HandleInviteV3Input{
 			HandleInviteInput: HandleInviteInput{
 				RoomID:            *validRoom,
 				RoomVersion:       "",
@@ -725,7 +740,7 @@ func TestHandleInviteV3NilVerifier(t *testing.T) {
 
 func TestHandleInviteV3NilRoomQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -735,7 +750,7 @@ func TestHandleInviteV3NilRoomQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInviteV3(context.Background(), HandleInviteV3Input{
+		_, _ = HandleInviteV3(t.Context(), HandleInviteV3Input{
 			HandleInviteInput: HandleInviteInput{
 				RoomID:            *validRoom,
 				RoomVersion:       "",
@@ -754,7 +769,7 @@ func TestHandleInviteV3NilRoomQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilMembershipQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -764,7 +779,7 @@ func TestHandleInviteV3NilMembershipQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInviteV3(context.Background(), HandleInviteV3Input{
+		_, _ = HandleInviteV3(t.Context(), HandleInviteV3Input{
 			HandleInviteInput: HandleInviteInput{
 				RoomID:            *validRoom,
 				RoomVersion:       "",
@@ -783,7 +798,7 @@ func TestHandleInviteV3NilMembershipQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilStateQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -793,7 +808,7 @@ func TestHandleInviteV3NilStateQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInviteV3(context.Background(), HandleInviteV3Input{
+		_, _ = HandleInviteV3(t.Context(), HandleInviteV3Input{
 			HandleInviteInput: HandleInviteInput{
 				RoomID:            *validRoom,
 				RoomVersion:       "",
@@ -812,7 +827,7 @@ func TestHandleInviteV3NilStateQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilUserIDQuerier(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -822,7 +837,7 @@ func TestHandleInviteV3NilUserIDQuerier(t *testing.T) {
 	verifier := &KeyRing{[]KeyFetcher{&TestRequestKeyDummy{}}, &joinKeyDatabase{key: pk}}
 
 	assert.Panics(t, func() {
-		_, _ = HandleInviteV3(context.Background(), HandleInviteV3Input{
+		_, _ = HandleInviteV3(t.Context(), HandleInviteV3Input{
 			HandleInviteInput: HandleInviteInput{
 				RoomID:            *validRoom,
 				RoomVersion:       "",
@@ -841,7 +856,7 @@ func TestHandleInviteV3NilUserIDQuerier(t *testing.T) {
 
 func TestHandleInviteV3NilContext(t *testing.T) {
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {

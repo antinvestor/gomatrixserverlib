@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -18,7 +18,12 @@ func SenderIDForUserTest(roomID spec.RoomID, userID spec.UserID) (*spec.SenderID
 	return &senderID, nil
 }
 
-func CreateSenderID(ctx context.Context, userID spec.UserID, roomID spec.RoomID, roomVersion string) (spec.SenderID, ed25519.PrivateKey, error) {
+func CreateSenderID(
+	ctx context.Context,
+	userID spec.UserID,
+	roomID spec.RoomID,
+	roomVersion string,
+) (spec.SenderID, ed25519.PrivateKey, error) {
 	_, key, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return "", nil, err
@@ -26,7 +31,12 @@ func CreateSenderID(ctx context.Context, userID spec.UserID, roomID spec.RoomID,
 	return spec.SenderID(userID.String()), key, nil
 }
 
-func CreateSenderIDPseudoIDs(ctx context.Context, userID spec.UserID, roomID spec.RoomID, roomVersion string) (spec.SenderID, ed25519.PrivateKey, error) {
+func CreateSenderIDPseudoIDs(
+	ctx context.Context,
+	userID spec.UserID,
+	roomID spec.RoomID,
+	roomVersion string,
+) (spec.SenderID, ed25519.PrivateKey, error) {
 	_, key, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return "", nil, err
@@ -42,16 +52,26 @@ type TestFederatedInviteClient struct {
 	shouldFail bool
 }
 
-func (f *TestFederatedInviteClient) SendInvite(ctx context.Context, event PDU, strippedState []InviteStrippedState) (PDU, error) {
+func (f *TestFederatedInviteClient) SendInvite(
+	ctx context.Context,
+	event PDU,
+	strippedState []InviteStrippedState,
+) (PDU, error) {
 	if f.shouldFail {
-		return nil, fmt.Errorf("failed sending invite")
+		return nil, errors.New("failed sending invite")
 	}
 	return nil, nil
 }
 
-func (f *TestFederatedInviteClient) SendInviteV3(ctx context.Context, event ProtoEvent, userID spec.UserID, roomVersion RoomVersion, strippedState []InviteStrippedState) (PDU, error) {
+func (f *TestFederatedInviteClient) SendInviteV3(
+	ctx context.Context,
+	event ProtoEvent,
+	userID spec.UserID,
+	roomVersion RoomVersion,
+	strippedState []InviteStrippedState,
+) (PDU, error) {
 	if f.shouldFail {
-		return nil, fmt.Errorf("failed sending invite")
+		return nil, errors.New("failed sending invite")
 	}
 
 	_, sk, _ := ed25519.GenerateKey(rand.Reader)
@@ -74,7 +94,11 @@ type TestEventQuerier struct {
 	createEvent PDU
 }
 
-func (q *TestEventQuerier) GetLatestEventsTest(ctx context.Context, roomID spec.RoomID, eventsNeeded []StateKeyTuple) (LatestEvents, error) {
+func (q *TestEventQuerier) GetLatestEventsTest(
+	ctx context.Context,
+	roomID spec.RoomID,
+	eventsNeeded []StateKeyTuple,
+) (LatestEvents, error) {
 	stateEvents := []PDU{}
 	prevEvents := []string{}
 	for _, event := range eventsNeeded {
@@ -107,28 +131,44 @@ func createMemberProtoEvent(sender string, roomID string, stateKey *string, cont
 
 func TestPerformInvite(t *testing.T) {
 	inviteeID, err := spec.NewUserID("@invitee:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	inviteeIDRemote, err := spec.NewUserID("@invitee:remote", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	inviterID, err := spec.NewUserID("@inviter:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := inviteeID.String()
-	inviteEvent := createMemberProtoEvent(inviterID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		inviterID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 
 	stateKey = inviteeIDRemote.String()
-	inviteEventRemote := createMemberProtoEvent(inviterID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEventRemote := createMemberProtoEvent(
+		inviterID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 
 	stateKey = inviterID.String()
-	inviterMemberEventEB := createMemberEventBuilder(RoomVersionV10, inviterID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"join"}`))
+	inviterMemberEventEB := createMemberEventBuilder(
+		RoomVersionV10,
+		inviterID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"join"}`),
+	)
 	inviterMemberEvent, err := inviterMemberEventEB.Build(time.Now(), inviteeID.Domain(), keyID, sk)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	stateKey = ""
 	createEventEB := MustGetRoomVersion(RoomVersionV10).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -322,23 +362,23 @@ func TestPerformInvite(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, joinErr := PerformInvite(context.Background(), tc.input, tc.fedClient)
+			_, joinErr := PerformInvite(t.Context(), tc.input, tc.fedClient)
 			if tc.expectedErr {
 				switch e := joinErr.(type) {
 				case nil:
 					t.Fatalf("Error should not be nil")
 				case spec.InternalServerError:
-					assert.Equal(t, tc.errType, InternalErr)
+					assert.Equal(t, InternalErr, tc.errType)
 				case spec.MatrixError:
-					assert.Equal(t, tc.errType, MatrixErr)
+					assert.Equal(t, MatrixErr, tc.errType)
 					assert.Equal(t, tc.errCode, e.ErrCode)
 				default:
 					t.Fatalf("Unexpected Error Type")
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.Nil(t, err)
-				assert.Nil(t, joinErr, string(jsonBytes))
+				assert.NoError(t, err)
+				assert.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}
@@ -346,20 +386,25 @@ func TestPerformInvite(t *testing.T) {
 
 func TestPerformInviteNilMembershipQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(context.Background(), PerformInviteInput{
+		_, _ = PerformInvite(t.Context(), PerformInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -381,20 +426,25 @@ func TestPerformInviteNilMembershipQuerier(t *testing.T) {
 
 func TestPerformInviteNilStateQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(context.Background(), PerformInviteInput{
+		_, _ = PerformInvite(t.Context(), PerformInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -416,20 +466,25 @@ func TestPerformInviteNilStateQuerier(t *testing.T) {
 
 func TestPerformInviteNilUserIDQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(context.Background(), PerformInviteInput{
+		_, _ = PerformInvite(t.Context(), PerformInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -451,20 +506,25 @@ func TestPerformInviteNilUserIDQuerier(t *testing.T) {
 
 func TestPerformInviteNilSenderIDQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(context.Background(), PerformInviteInput{
+		_, _ = PerformInvite(t.Context(), PerformInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -486,20 +546,25 @@ func TestPerformInviteNilSenderIDQuerier(t *testing.T) {
 
 func TestPerformInviteNilSenderIDCreator(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(context.Background(), PerformInviteInput{
+		_, _ = PerformInvite(t.Context(), PerformInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -521,19 +586,24 @@ func TestPerformInviteNilSenderIDCreator(t *testing.T) {
 
 func TestPerformInviteNilEventQuerier(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(context.Background(), PerformInviteInput{
+		_, _ = PerformInvite(t.Context(), PerformInviteInput{
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -555,20 +625,25 @@ func TestPerformInviteNilEventQuerier(t *testing.T) {
 
 func TestPerformInviteNilContext(t *testing.T) {
 	userID, err := spec.NewUserID("@user:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := userID.String()
-	inviteEvent := createMemberProtoEvent(userID.String(), validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		userID.String(),
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 	eventQuerier := TestEventQuerier{}
 
 	assert.Panics(t, func() {
-		_, _ = PerformInvite(nil, PerformInviteInput{ // nolint
+		_, _ = PerformInvite(nil, PerformInviteInput{ //nolint
 			RoomID:            *validRoom,
 			RoomVersion:       RoomVersionV10,
 			Invitee:           *userID,
@@ -590,33 +665,43 @@ func TestPerformInviteNilContext(t *testing.T) {
 
 func TestPerformInvitePseudoIDs(t *testing.T) {
 	inviteeID, err := spec.NewUserID("@invitee:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	inviteeIDRemote, err := spec.NewUserID("@invitee:remote", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	inviterID, err := spec.NewUserID("@inviter:server", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	_, inviterKey, err := ed25519.GenerateKey(rand.Reader)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	inviterPseudoID := string(spec.SenderIDFromPseudoIDKey(inviterKey))
 
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	keyID := KeyID("ed25519:1234")
 
 	stateKey := inviteeID.String()
-	inviteEvent := createMemberProtoEvent(inviterPseudoID, validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEvent := createMemberProtoEvent(
+		inviterPseudoID,
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 
 	stateKey = inviteeIDRemote.String()
-	inviteEventRemote := createMemberProtoEvent(inviterPseudoID, validRoom.String(), &stateKey, json.RawMessage(`{"membership":"invite"}`))
+	inviteEventRemote := createMemberProtoEvent(
+		inviterPseudoID,
+		validRoom.String(),
+		&stateKey,
+		json.RawMessage(`{"membership":"invite"}`),
+	)
 
 	rv := RoomVersionPseudoIDs
 	federate := true
 	cr := CreateContent{Creator: inviterPseudoID, RoomVersion: &rv, Federate: &federate}
 	crBytes, err := json.Marshal(cr)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	stateKey = ""
 	createEventEB := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -637,10 +722,10 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 
 	mapping := MXIDMapping{UserID: inviterID.String(), UserRoomKey: spec.SenderID(inviterPseudoID)}
 	err = mapping.Sign("server", keyID, inviterKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	content := MemberContent{Membership: spec.Join, MXIDMapping: &mapping}
 	contentBytes, err := json.Marshal(content)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	stateKey = inviterPseudoID
 	inviterJoinEB := MustGetRoomVersion(rv).NewEventBuilderFromProtoEvent(&ProtoEvent{
@@ -775,17 +860,20 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 		},
 		"remote_invite_federation_error": {
 			input: PerformInviteInput{
-				RoomID:                    *validRoom,
-				RoomVersion:               RoomVersionPseudoIDs,
-				Invitee:                   *inviteeIDRemote,
-				IsTargetLocal:             false,
-				EventTemplate:             inviteEventRemote,
-				StrippedState:             []InviteStrippedState{},
-				KeyID:                     keyID,
-				SigningKey:                inviterKey,
-				EventTime:                 time.Now(),
-				MembershipQuerier:         &TestMembershipQuerier{},
-				StateQuerier:              &TestStateQuerier{createEvent: createEvent, inviterMemberEvent: inviterJoinEvent},
+				RoomID:            *validRoom,
+				RoomVersion:       RoomVersionPseudoIDs,
+				Invitee:           *inviteeIDRemote,
+				IsTargetLocal:     false,
+				EventTemplate:     inviteEventRemote,
+				StrippedState:     []InviteStrippedState{},
+				KeyID:             keyID,
+				SigningKey:        inviterKey,
+				EventTime:         time.Now(),
+				MembershipQuerier: &TestMembershipQuerier{},
+				StateQuerier: &TestStateQuerier{
+					createEvent:        createEvent,
+					inviterMemberEvent: inviterJoinEvent,
+				},
 				UserIDQuerier:             UserIDForSenderTest,
 				SenderIDQuerier:           SenderIDForUserTest,
 				SenderIDCreator:           CreateSenderIDPseudoIDs,
@@ -799,17 +887,20 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 		},
 		"success_local": {
 			input: PerformInviteInput{
-				RoomID:                    *validRoom,
-				RoomVersion:               RoomVersionPseudoIDs,
-				Invitee:                   *inviteeID,
-				IsTargetLocal:             true,
-				EventTemplate:             inviteEvent,
-				StrippedState:             []InviteStrippedState{},
-				KeyID:                     keyID,
-				SigningKey:                inviterKey,
-				EventTime:                 time.Now(),
-				MembershipQuerier:         &TestMembershipQuerier{},
-				StateQuerier:              &TestStateQuerier{createEvent: createEvent, inviterMemberEvent: inviterJoinEvent},
+				RoomID:            *validRoom,
+				RoomVersion:       RoomVersionPseudoIDs,
+				Invitee:           *inviteeID,
+				IsTargetLocal:     true,
+				EventTemplate:     inviteEvent,
+				StrippedState:     []InviteStrippedState{},
+				KeyID:             keyID,
+				SigningKey:        inviterKey,
+				EventTime:         time.Now(),
+				MembershipQuerier: &TestMembershipQuerier{},
+				StateQuerier: &TestStateQuerier{
+					createEvent:        createEvent,
+					inviterMemberEvent: inviterJoinEvent,
+				},
 				UserIDQuerier:             userIDForSender,
 				SenderIDQuerier:           SenderIDForUserTest,
 				SenderIDCreator:           CreateSenderIDPseudoIDs,
@@ -821,17 +912,20 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 		},
 		"success_remote": {
 			input: PerformInviteInput{
-				RoomID:                    *validRoom,
-				RoomVersion:               RoomVersionPseudoIDs,
-				Invitee:                   *inviteeIDRemote,
-				IsTargetLocal:             false,
-				EventTemplate:             inviteEventRemote,
-				StrippedState:             []InviteStrippedState{},
-				KeyID:                     keyID,
-				SigningKey:                inviterKey,
-				EventTime:                 time.Now(),
-				MembershipQuerier:         &TestMembershipQuerier{},
-				StateQuerier:              &TestStateQuerier{createEvent: createEvent, inviterMemberEvent: inviterJoinEvent},
+				RoomID:            *validRoom,
+				RoomVersion:       RoomVersionPseudoIDs,
+				Invitee:           *inviteeIDRemote,
+				IsTargetLocal:     false,
+				EventTemplate:     inviteEventRemote,
+				StrippedState:     []InviteStrippedState{},
+				KeyID:             keyID,
+				SigningKey:        inviterKey,
+				EventTime:         time.Now(),
+				MembershipQuerier: &TestMembershipQuerier{},
+				StateQuerier: &TestStateQuerier{
+					createEvent:        createEvent,
+					inviterMemberEvent: inviterJoinEvent,
+				},
 				UserIDQuerier:             userIDForSender,
 				SenderIDQuerier:           SenderIDForUserTest,
 				SenderIDCreator:           CreateSenderIDPseudoIDs,
@@ -845,23 +939,23 @@ func TestPerformInvitePseudoIDs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, joinErr := PerformInvite(context.Background(), tc.input, tc.fedClient)
+			_, joinErr := PerformInvite(t.Context(), tc.input, tc.fedClient)
 			if tc.expectedErr {
 				switch e := joinErr.(type) {
 				case nil:
 					t.Fatalf("Error should not be nil")
 				case spec.InternalServerError:
-					assert.Equal(t, tc.errType, InternalErr)
+					assert.Equal(t, InternalErr, tc.errType)
 				case spec.MatrixError:
-					assert.Equal(t, tc.errType, MatrixErr)
+					assert.Equal(t, MatrixErr, tc.errType)
 					assert.Equal(t, tc.errCode, e.ErrCode)
 				default:
 					t.Fatalf("Unexpected Error Type")
 				}
 			} else {
 				jsonBytes, err := json.Marshal(&joinErr)
-				assert.Nil(t, err)
-				assert.Nil(t, joinErr, string(jsonBytes))
+				assert.NoError(t, err)
+				assert.NoError(t, joinErr, string(jsonBytes))
 			}
 		})
 	}

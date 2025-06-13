@@ -62,7 +62,7 @@ type FederatedStateProvider struct {
 	AuthEventMap        map[string]PDU
 }
 
-// StateIDsBeforeEvent implements StateProvider
+// StateIDsBeforeEvent implements StateProvider.
 func (p *FederatedStateProvider) StateIDsBeforeEvent(ctx context.Context, event PDU) ([]string, error) {
 	res, err := p.FedClient.LookupStateIDs(ctx, p.Origin, p.Server, event.RoomID().String(), event.EventID())
 	if err != nil {
@@ -74,8 +74,13 @@ func (p *FederatedStateProvider) StateIDsBeforeEvent(ctx context.Context, event 
 	return res.GetStateEventIDs(), nil
 }
 
-// StateBeforeEvent implements StateProvider
-func (p *FederatedStateProvider) StateBeforeEvent(ctx context.Context, roomVer RoomVersion, event PDU, eventIDs []string) (map[string]PDU, error) {
+// StateBeforeEvent implements StateProvider.
+func (p *FederatedStateProvider) StateBeforeEvent(
+	ctx context.Context,
+	roomVer RoomVersion,
+	event PDU,
+	eventIDs []string,
+) (map[string]PDU, error) {
 	res, err := p.FedClient.LookupState(ctx, p.Origin, p.Server, event.RoomID().String(), event.EventID(), roomVer)
 	if err != nil {
 		return nil, err
@@ -114,10 +119,20 @@ func (p *FederatedStateProvider) StateBeforeEvent(ctx context.Context, roomVer R
 // This check initially attempts to validate that the auth_events are in the target room state, and if they are it will short-circuit
 // and succeed early. THIS IS ONLY VALID IF STEP 4 HAS BEEN PREVIOUSLY APPLIED. Otherwise, a malicious server could lie and say that
 // no auth_events are required and this function will short-circuit and allow it.
-func VerifyAuthRulesAtState(ctx context.Context, sp StateProvider, eventToVerify PDU, allowValidation bool, userIDForSender spec.UserIDForSender) error {
+func VerifyAuthRulesAtState(
+	ctx context.Context,
+	sp StateProvider,
+	eventToVerify PDU,
+	allowValidation bool,
+	userIDForSender spec.UserIDForSender,
+) error {
 	stateIDs, err := sp.StateIDsBeforeEvent(ctx, eventToVerify)
 	if err != nil {
-		return fmt.Errorf("gomatrixserverlib.VerifyAuthRulesAtState: cannot fetch state IDs before event %s: %w", eventToVerify.EventID(), err)
+		return fmt.Errorf(
+			"gomatrixserverlib.VerifyAuthRulesAtState: cannot fetch state IDs before event %s: %w",
+			eventToVerify.EventID(),
+			err,
+		)
 	}
 
 	if allowValidation {
@@ -146,7 +161,11 @@ func VerifyAuthRulesAtState(ctx context.Context, sp StateProvider, eventToVerify
 	// slow path: fetch the events at this state and check auth
 	roomState, err := sp.StateBeforeEvent(ctx, eventToVerify.Version(), eventToVerify, stateIDs)
 	if err != nil {
-		return fmt.Errorf("gomatrixserverlib.VerifyAuthRulesAtState: cannot get state at event %s: %w", eventToVerify.EventID(), err)
+		return fmt.Errorf(
+			"gomatrixserverlib.VerifyAuthRulesAtState: cannot get state at event %s: %w",
+			eventToVerify.EventID(),
+			err,
+		)
 	}
 	if ctx.Err() != nil {
 		return fmt.Errorf("gomatrixserverlib.VerifyAuthRulesAtState: context cancelled: %w", ctx.Err())

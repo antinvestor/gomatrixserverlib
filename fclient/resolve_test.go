@@ -29,7 +29,7 @@ func assertCritical(t *testing.T, val, expected interface{}) {
 // If one of them doesn't match, or the resolution function returned with an
 // error, it aborts the current test.
 func testResolve(t *testing.T, serverName spec.ServerName, destination, host, certName string) {
-	res, err := ResolveServer(context.Background(), serverName)
+	res, err := ResolveServer(t.Context(), serverName)
 	assertCritical(t, err, nil)
 	assertCritical(t, len(res), 1)
 	assertCritical(t, res[0].Destination, destination)
@@ -103,10 +103,12 @@ func TestResolutionHostnameWellKnownWithIPLiteral(t *testing.T) {
 
 	testResolve(
 		t,
-		spec.ServerName("example.com"), // The server name is a domain hosting a .well-known file which specifies an IP literal without a port
-		"42.42.42.42:8448",             // Destination must be the IP literal + port 8448
-		"42.42.42.42",                  // Host must be the IP literal
-		"42.42.42.42",                  // Certificate (Name) must be for the IP literal
+		spec.ServerName(
+			"example.com",
+		), // The server name is a domain hosting a .well-known file which specifies an IP literal without a port
+		"42.42.42.42:8448", // Destination must be the IP literal + port 8448
+		"42.42.42.42",      // Host must be the IP literal
+		"42.42.42.42",      // Certificate (Name) must be for the IP literal
 	)
 }
 
@@ -121,10 +123,12 @@ func TestResolutionHostnameWellKnownWithIPLiteralAndPort(t *testing.T) {
 
 	testResolve(
 		t,
-		spec.ServerName("example.com"), // The server name is a domain hosting a .well-known file which specifies an IP literal with a port
-		"42.42.42.42:443",              // Destination must be the IP literal + port
-		"42.42.42.42:443",              // Host must be the IP literal + port
-		"42.42.42.42",                  // Certificate (Name) must be for the IP literal
+		spec.ServerName(
+			"example.com",
+		), // The server name is a domain hosting a .well-known file which specifies an IP literal with a port
+		"42.42.42.42:443", // Destination must be the IP literal + port
+		"42.42.42.42:443", // Host must be the IP literal + port
+		"42.42.42.42",     // Certificate (Name) must be for the IP literal
 	)
 }
 
@@ -139,10 +143,12 @@ func TestResolutionHostnameWellKnownWithHostnameAndPort(t *testing.T) {
 
 	testResolve(
 		t,
-		spec.ServerName("example.com"), // The server name is a domain hosting a .well-known file which specifies a hostname that's not an IP literal and has a port
-		"matrix.example.com:4242",      // Destination must be the hostname + port
-		"matrix.example.com:4242",      // Host must be the hostname + port
-		"matrix.example.com",           // Certificate (Name) must be for the hostname
+		spec.ServerName(
+			"example.com",
+		), // The server name is a domain hosting a .well-known file which specifies a hostname that's not an IP literal and has a port
+		"matrix.example.com:4242", // Destination must be the hostname + port
+		"matrix.example.com:4242", // Host must be the hostname + port
+		"matrix.example.com",      // Certificate (Name) must be for the hostname
 	)
 }
 
@@ -160,7 +166,9 @@ func TestResolutionHostnameWellKnownWithHostnameSRV(t *testing.T) {
 
 	testResolve(
 		t,
-		spec.ServerName("example.com"), // The server name is a domain hosting a .well-known file which specifies a hostname that's not an IP literal, has no port and for which a SRV record with a non-0 exists
+		spec.ServerName(
+			"example.com",
+		), // The server name is a domain hosting a .well-known file which specifies a hostname that's not an IP literal, has no port and for which a SRV record with a non-0 exists
 		"matrix.otherexample.com:4242", // Destination must be the hostname + port from the SRV record
 		"matrix.example.com",           // Host must be the delegated hostname
 		"matrix.example.com",           // Certificate (Name) must be for the delegated hostname
@@ -181,10 +189,12 @@ func TestResolutionHostnameWellKnownWithHostnameNoSRV(t *testing.T) {
 
 	testResolve(
 		t,
-		spec.ServerName("example.com"), // The server name is a domain hosting a .well-known file which specifies a hostname that's not an IP literal, has no port and for which no SRV record exists
-		"matrix.example.com:8448",      // Destination must be the delegated hostname + port 8448
-		"matrix.example.com",           // Host must be the delegated hostname
-		"matrix.example.com",           // Certificate (Name) must be for the delegated hostname
+		spec.ServerName(
+			"example.com",
+		), // The server name is a domain hosting a .well-known file which specifies a hostname that's not an IP literal, has no port and for which no SRV record exists
+		"matrix.example.com:8448", // Destination must be the delegated hostname + port 8448
+		"matrix.example.com",      // Host must be the delegated hostname
+		"matrix.example.com",      // Certificate (Name) must be for the delegated hostname
 	)
 }
 
@@ -238,11 +248,11 @@ func setupFakeDNS(answerSRV bool) (cleanup func()) {
 	// Using 0 as the port will tell the system to find a suitable available port.
 	udpAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
 	if err != nil {
-		panic(fmt.Errorf("failed to ResolveUDPAddr: %v", err))
+		panic(fmt.Errorf("failed to ResolveUDPAddr: %w", err))
 	}
 	udpConn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
-		panic(fmt.Errorf("failed to ListenUDP: %v", err))
+		panic(fmt.Errorf("failed to ListenUDP: %w", err))
 	}
 
 	// Get the actual address and port we're listening on.
@@ -277,7 +287,7 @@ func setupFakeDNS(answerSRV bool) (cleanup func()) {
 		net.DefaultResolver = defaultResolver
 	}
 
-	return
+	return cleanup
 }
 
 // dnsHandler is the handler used to answer DNS queries.

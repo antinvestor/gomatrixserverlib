@@ -144,7 +144,7 @@ func TestVerifyCanonical(t *testing.T) {
 		//	name:    "escaped unicode",
 		//	input:   []byte(`{"\u00F1":0}`),
 		//	valid: false,
-		//},
+		// },
 		//{
 		//	name:    "long form unicode",
 		//	input:   []byte(`{"\u0009":0}`),
@@ -184,7 +184,7 @@ func TestVerifyCanonical(t *testing.T) {
 		//	name:    "unsorted keys",
 		//	input:   []byte(`{"b":0,"a":1}`),
 		//	valid: false,
-		//},
+		// },
 		//{
 		//	name:    "unsorted keys in array",
 		//	input:   []byte(`{"a":[{"b":0,"a":1},{"b":0,"a":1}]}`),
@@ -214,7 +214,7 @@ func TestVerifyCanonical(t *testing.T) {
 		//	name:      "duplicate keys",
 		//	input:     []byte(`{"a":0,"a":1}`),
 		//	valid:   false,
-		//},
+		// },
 		//{
 		//	name:      "nested duplicate keys",
 		//	input:     []byte(`{"a":[{"a":0,"a":1}]}`),
@@ -260,7 +260,7 @@ func TestCanonicalConversion(t *testing.T) {
 		//	name:      "exponential notation number",
 		//	input:     []byte(`{"a":1e5}`),
 		//	canonical: []byte(`{"a":100000}`),
-		//},
+		// },
 		{
 			name:      "unsorted keys",
 			input:     []byte(`{"b":0,"a":1}`),
@@ -277,8 +277,10 @@ func TestCanonicalConversion(t *testing.T) {
 			canonical: []byte(`{"a":0}`),
 		},
 		{
-			name:      "conversion combo",
-			input:     []byte(`{ "\u00F1": -0, "2": 0, "1": 9007199254740991, "4": [{"2": 0, "1": 0},{"2": 0, "1": 0}] }`),
+			name: "conversion combo",
+			input: []byte(
+				`{ "\u00F1": -0, "2": 0, "1": 9007199254740991, "4": [{"2": 0, "1": 0},{"2": 0, "1": 0}] }`,
+			),
 			canonical: []byte(`{"1":9007199254740991,"2":0,"4":[{"1":0,"2":0},{"1":0,"2":0}],"ñ":0}`),
 		},
 	}
@@ -290,7 +292,15 @@ func TestCanonicalConversion(t *testing.T) {
 			}
 
 			if !bytes.Equal(tt.canonical, gmslCanonical) {
-				t.Fatalf("GMSL canonical JSON is not canonical. \n      Original: %s (% X) \nGMSL Canonical: %s (% X) \n Expected Form: %s (% X)", tt.input, tt.input, gmslCanonical, gmslCanonical, tt.canonical, tt.canonical)
+				t.Fatalf(
+					"GMSL canonical JSON is not canonical. \n      Original: %s (% X) \nGMSL Canonical: %s (% X) \n Expected Form: %s (% X)",
+					tt.input,
+					tt.input,
+					gmslCanonical,
+					gmslCanonical,
+					tt.canonical,
+					tt.canonical,
+				)
 			}
 		})
 	}

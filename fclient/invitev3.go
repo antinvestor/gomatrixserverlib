@@ -6,21 +6,25 @@ import (
 	"github.com/antinvestor/gomatrixserverlib"
 )
 
-func NewInviteV3Request(event gomatrixserverlib.ProtoEvent, version gomatrixserverlib.RoomVersion, state []gomatrixserverlib.InviteStrippedState) (
+func NewInviteV3Request(
+	event gomatrixserverlib.ProtoEvent,
+	version gomatrixserverlib.RoomVersion,
+	state []gomatrixserverlib.InviteStrippedState,
+) (
 	request InviteV3Request, err error,
 ) {
 	if !gomatrixserverlib.KnownRoomVersion(version) {
 		err = gomatrixserverlib.UnsupportedRoomVersionError{
 			Version: version,
 		}
-		return
+		return request, err
 	}
 	request.fields.inviteV2RequestHeaders = inviteV2RequestHeaders{
 		RoomVersion:     version,
 		InviteRoomState: state,
 	}
 	request.fields.Event = event
-	return
+	return request, err
 }
 
 // InviteV3Request is used in the body of a /_matrix/federation/v3/invite request.
@@ -31,12 +35,12 @@ type InviteV3Request struct {
 	}
 }
 
-// MarshalJSON implements json.Marshaller
+// MarshalJSON implements json.Marshaller.
 func (i InviteV3Request) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.fields)
 }
 
-// UnmarshalJSON implements json.Unmarshaller
+// UnmarshalJSON implements json.Unmarshaller.
 func (i *InviteV3Request) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &i.fields)
 	if err != nil {

@@ -12,8 +12,11 @@ func TestValidRoomIDs(t *testing.T) {
 		opaque string
 		domain string
 	}{
-		"basic":            {opaque: defaultLocalpart, domain: defaultDomain},
-		"extensive_opaque": {opaque: "!\"#$%&'()*+,-./0123456789;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~", domain: defaultDomain},
+		"basic": {opaque: defaultLocalpart, domain: defaultDomain},
+		"extensive_opaque": {
+			opaque: "!\"#$%&'()*+,-./0123456789;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+			domain: defaultDomain,
+		},
 		"domain_with_port": {opaque: defaultLocalpart, domain: "domain.org:80"},
 		"minimum_id":       {opaque: "a", domain: "1"},
 	}

@@ -3,6 +3,7 @@ package gomatrixserverlib
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -14,11 +15,11 @@ import (
 
 func TestHandleMakeLeave(t *testing.T) {
 	validUser, err := spec.NewUserID("@user:remote", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	validRoom, err := spec.NewRoomID("!room:remote")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	joinedUser, err := spec.NewUserID("@joined:local", true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -144,7 +145,7 @@ func TestHandleMakeLeave(t *testing.T) {
 				LocalServerInRoom: true,
 				UserIDQuerier:     UserIDForSenderTest,
 				BuildEventTemplate: func(protoEvent *ProtoEvent) (PDU, []PDU, error) {
-					return nil, nil, fmt.Errorf("error")
+					return nil, nil, errors.New("error")
 				},
 			},
 			wantErr: assert.Error,

@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -19,17 +20,17 @@ func NewRoomID(id string) (*RoomID, error) {
 	return parseAndValidateRoomID(id)
 }
 
-// Returns the full roomID string including leading sigil
+// Returns the full roomID string including leading sigil.
 func (room RoomID) String() string {
 	return room.raw
 }
 
-// Returns just the localpart of the roomID
+// Returns just the localpart of the roomID.
 func (room RoomID) OpaqueID() string {
 	return room.opaqueID
 }
 
-// Returns just the domain of the roomID
+// Returns just the domain of the roomID.
 func (room RoomID) Domain() ServerName {
 	return ServerName(room.domain)
 }
@@ -50,7 +51,7 @@ func parseAndValidateRoomID(id string) (*RoomID, error) {
 		return nil, fmt.Errorf("at least one '%c' is expected in the room id", localDomainSeparator)
 	}
 	if _, _, ok := ParseAndValidateServerName(ServerName(domain)); !ok {
-		return nil, fmt.Errorf("domain is invalid")
+		return nil, errors.New("domain is invalid")
 	}
 
 	// NOTE: There are no character limitations on the opaque part of room ids

@@ -41,7 +41,7 @@ func TestEmptyUnsignedFieldIsSetForPDU(t *testing.T) {
 	}
 
 	if !bytes.Equal(output.Unsigned(), inviteStateJSON) {
-		t.Fatalf("Expected: %v, Got: %v", string(inviteStateJSON[:]), string(output.Unsigned()[:]))
+		t.Fatalf("Expected: %v, Got: %v", string(inviteStateJSON), string(output.Unsigned()))
 	}
 }
 
@@ -51,9 +51,15 @@ func TestEmptyUnsignedFieldIsSetForProtoEvent(t *testing.T) {
 	eventType := "m.room.name"
 	stateKey := ""
 	prevEvents := []string{"upCsBqUhNUgT2/+zkzg8TbqdQpWWKQnZpGJc6KcbUC4"}
-	authEvents := []string{"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY", "X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko", "k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno"}
+	authEvents := []string{
+		"abjkiDSg1RkuZrbj2jZoGMlQaaj1Ue3Jhi7I7NlKfXY",
+		"X7RUj46hM/8sUHNBIFkStbOauPvbDzjSdH4NibYWnko",
+		"k9eM6utkCH8vhLW9/oRsH74jOBS/6RVK42iGDFbylno",
+	}
 	depth := int64(7)
-	signatures := json.RawMessage(`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`)
+	signatures := json.RawMessage(
+		`{"localhost": {"ed25519:u9kP": "5IzSuRXkxvbTp0vZhhXYZeOe+619iG3AybJXr7zfNn/4vHz4TH7qSJVQXSaHHvcTcDodAKHnTG1WDulgO5okAQ"}}`,
+	)
 	content := json.RawMessage(`{"name":"test3"}`)
 
 	output := ProtoEvent{
@@ -81,6 +87,6 @@ func TestEmptyUnsignedFieldIsSetForProtoEvent(t *testing.T) {
 	}
 
 	if !bytes.Equal(output.Unsigned, inviteStateJSON) {
-		t.Fatalf("Expected: %v, Got: %v", string(inviteStateJSON[:]), string(output.Unsigned[:]))
+		t.Fatalf("Expected: %v, Got: %v", string(inviteStateJSON), string(output.Unsigned[:]))
 	}
 }

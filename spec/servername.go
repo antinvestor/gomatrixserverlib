@@ -19,7 +19,7 @@ type ServerName string
 func ParseAndValidateServerName(serverName ServerName) (host string, port int, valid bool) {
 	// Don't go any further if the server name is an empty string.
 	if len(serverName) == 0 {
-		return
+		return host, port, valid
 	}
 
 	host, port = splitServerName(serverName)
@@ -30,38 +30,38 @@ func ParseAndValidateServerName(serverName ServerName) (host string, port int, v
 	//  - an IPv6 address
 
 	if len(host) == 0 {
-		return
+		return host, port, valid
 	}
 
 	if host[0] == '[' {
 		// must be a valid IPv6 address
 		if host[len(host)-1] != ']' {
-			return
+			return host, port, valid
 		}
 		ip := host[1 : len(host)-1]
 		if net.ParseIP(ip) == nil {
-			return
+			return host, port, valid
 		}
 		valid = true
-		return
+		return host, port, valid
 	}
 
 	// try parsing as an IPv4 address
 	ip := net.ParseIP(host)
 	if ip != nil && ip.To4() != nil {
 		valid = true
-		return
+		return host, port, valid
 	}
 
 	// must be a valid DNS Name
 	for _, r := range host {
 		if !isDNSNameChar(r) {
-			return
+			return host, port, valid
 		}
 	}
 
 	valid = true
-	return
+	return host, port, valid
 }
 
 func isDNSNameChar(r rune) bool {
@@ -80,10 +80,7 @@ func isDNSNameChar(r rune) bool {
 	return false
 }
 
-// splitServerName splits a ServerName into host and port, without doing
-// any validation.
-//
-// if there is no explicit port, returns '-1' as the port
+// if there is no explicit port, returns '-1' as the port.
 func splitServerName(serverName ServerName) (string, int) {
 	nameStr := string(serverName)
 

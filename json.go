@@ -148,8 +148,7 @@ func verifyEnforcedCanonicalJSON(input []byte) error {
 	return nil
 }
 
-// CanonicalJSONAssumeValid is the same as CanonicalJSON, but assumes the
-// input is valid JSON
+// input is valid JSON.
 func CanonicalJSONAssumeValid(input []byte) []byte {
 	input = CompactJSON(input, make([]byte, 0, len(input)))
 	return SortJSON(input, make([]byte, 0, len(input)))
@@ -251,8 +250,7 @@ func sortJSONObject(input gjson.Result, output []byte) []byte {
 	return output
 }
 
-// CompactJSON makes the encoded JSON as small as possible by removing
-// whitespace and unneeded unicode escapes
+// whitespace and unneeded unicode escapes.
 func CompactJSON(input, output []byte) []byte {
 	var i int
 	for i < len(input) {
@@ -292,7 +290,6 @@ func CompactJSON(input, output []byte) []byte {
 						// All other permitted escapes are single charater escapes that are already in their shortest form.
 						output = append(output, '\\', escape)
 					}
-
 				} else {
 					output = append(output, c)
 				}

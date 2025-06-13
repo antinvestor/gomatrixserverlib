@@ -50,7 +50,8 @@ type PerformInviteInput struct {
 // to happen.
 // On success will return either nothing (in the case of inviting a local user) or
 // a fully formed & signed Invite Event (in the case of inviting a remote user)
-// nolint:gocyclo
+//
+//nolint:gocyclo
 func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient FederatedInviteClient) (PDU, error) {
 	if input.MembershipQuerier == nil || input.StateQuerier == nil || input.UserIDQuerier == nil ||
 		input.SenderIDQuerier == nil || input.SenderIDCreator == nil || input.EventQuerier == nil {
@@ -134,7 +135,10 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 		return nil, fmt.Errorf("eventsNeeded.AuthEventReferences: %w", err)
 	}
 
-	input.EventTemplate.AuthEvents, input.EventTemplate.PrevEvents = truncateAuthAndPrevEvents(refs, latestEvents.PrevEventIDs)
+	input.EventTemplate.AuthEvents, input.EventTemplate.PrevEvents = truncateAuthAndPrevEvents(
+		refs,
+		latestEvents.PrevEventIDs,
+	)
 
 	checkEventAllowed := func(inviteEvent PDU) error {
 		// The invite originated locally. Therefore we have a responsibility to
@@ -143,17 +147,23 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 		// trust.
 		authEventProvider, err := input.StateQuerier.GetAuthEvents(ctx, inviteEvent)
 		if err != nil {
-			logger.WithError(err).WithField("event_id", inviteEvent.EventID()).WithField("auth_event_ids", inviteEvent.AuthEventIDs()).Error(
-				"ProcessInvite.getAuthEvents failed for event",
-			)
+			logger.WithError(err).
+				WithField("event_id", inviteEvent.EventID()).
+				WithField("auth_event_ids", inviteEvent.AuthEventIDs()).
+				Error(
+					"ProcessInvite.getAuthEvents failed for event",
+				)
 			return spec.Forbidden(err.Error())
 		}
 
 		// Check if the event is allowed.
 		if err = Allowed(inviteEvent, authEventProvider, input.UserIDQuerier); err != nil {
-			logger.WithError(err).WithField("event_id", inviteEvent.EventID()).WithField("auth_event_ids", inviteEvent.AuthEventIDs()).Error(
-				"ProcessInvite: event not allowed",
-			)
+			logger.WithError(err).
+				WithField("event_id", inviteEvent.EventID()).
+				WithField("auth_event_ids", inviteEvent.AuthEventIDs()).
+				Error(
+					"ProcessInvite: event not allowed",
+				)
 			return spec.Forbidden(err.Error())
 		}
 
@@ -171,7 +181,12 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 
 		if input.IsTargetLocal {
 			// if we invited a local user, we can also create a user room key, if it doesn't exist yet.
-			inviteeSenderID, inviteeSigningKey, err := input.SenderIDCreator(ctx, input.Invitee, input.RoomID, string(input.RoomVersion))
+			inviteeSenderID, inviteeSigningKey, err := input.SenderIDCreator(
+				ctx,
+				input.Invitee,
+				input.RoomID,
+				string(input.RoomVersion),
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -181,7 +196,12 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 
 			// Sign the event so that other servers will know that we have received the invite.
 			fullEventBuilder := verImpl.NewEventBuilderFromProtoEvent(&input.EventTemplate)
-			inviteEvent, err = fullEventBuilder.Build(input.EventTime, spec.ServerName(inviteeSenderID), keyID, inviteeSigningKey)
+			inviteEvent, err = fullEventBuilder.Build(
+				input.EventTime,
+				spec.ServerName(inviteeSenderID),
+				keyID,
+				inviteeSigningKey,
+			)
 			if err != nil {
 				logger.WithError(err).Error("failed building invite event")
 				return nil, spec.InternalServerError{}
@@ -284,5 +304,5 @@ func truncateAuthAndPrevEvents(auth, prev []string) (
 	if len(truncPrev) > 20 {
 		truncPrev = truncPrev[:20]
 	}
-	return
+	return truncAuth, truncPrev
 }

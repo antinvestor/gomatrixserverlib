@@ -41,7 +41,13 @@ type LatestEvents struct {
 
 type FederatedInviteClient interface {
 	SendInvite(ctx context.Context, event PDU, strippedState []InviteStrippedState) (PDU, error)
-	SendInviteV3(ctx context.Context, event ProtoEvent, userID spec.UserID, roomVersion RoomVersion, strippedState []InviteStrippedState) (PDU, error)
+	SendInviteV3(
+		ctx context.Context,
+		event ProtoEvent,
+		userID spec.UserID,
+		roomVersion RoomVersion,
+		strippedState []InviteStrippedState,
+	) (PDU, error)
 }
 
 // InviteStrippedState is a cut-down set of fields from room state
@@ -62,15 +68,15 @@ func NewInviteStrippedState(event PDU) (ss InviteStrippedState) {
 	ss.fields.StateKey = event.StateKey()
 	ss.fields.Type = event.Type()
 	ss.fields.SenderID = string(event.SenderID())
-	return
+	return ss
 }
 
-// MarshalJSON implements json.Marshaller
+// MarshalJSON implements json.Marshaller.
 func (i InviteStrippedState) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.fields)
 }
 
-// UnmarshalJSON implements json.Unmarshaller
+// UnmarshalJSON implements json.Unmarshaller.
 func (i *InviteStrippedState) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &i.fields)
 }
@@ -126,12 +132,16 @@ func GenerateStrippedState(
 	return []InviteStrippedState{}, nil
 }
 
-func abortIfAlreadyJoined(ctx context.Context, roomID spec.RoomID, invitedUser spec.SenderID, membershipQuerier MembershipQuerier) error {
+func abortIfAlreadyJoined(
+	ctx context.Context,
+	roomID spec.RoomID,
+	invitedUser spec.SenderID,
+	membershipQuerier MembershipQuerier,
+) error {
 	membership, err := membershipQuerier.CurrentMembership(ctx, roomID, invitedUser)
 	if err != nil {
 		util.Log(ctx).WithError(err).Error("failed getting user membership")
 		return spec.InternalServerError{}
-
 	}
 	isAlreadyJoined := (membership == spec.Join)
 
@@ -169,7 +179,13 @@ func abortIfAlreadyJoined(ctx context.Context, roomID spec.RoomID, invitedUser s
 	return nil
 }
 
-func createInviteLogger(ctx context.Context, roomID spec.RoomID, inviter spec.UserID, invitee spec.UserID, eventID string) *util.LogEntry {
+func createInviteLogger(
+	ctx context.Context,
+	roomID spec.RoomID,
+	inviter spec.UserID,
+	invitee spec.UserID,
+	eventID string,
+) *util.LogEntry {
 	return util.Log(ctx).WithField("inviter", inviter.String()).
 		WithField("invitee", invitee.String()).
 		WithField("room_id", roomID.String()).

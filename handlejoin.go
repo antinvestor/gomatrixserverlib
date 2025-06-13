@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/antinvestor/gomatrixserverlib/spec"
@@ -76,7 +77,9 @@ func HandleMakeJoin(input HandleMakeJoinInput) (*HandleMakeJoinResponse, error) 
 
 	// Check if the restricted join is allowed. If the room doesn't
 	// support restricted joins then this is effectively a no-op.
-	authorisedVia, err := MustGetRoomVersion(input.RoomVersion).CheckRestrictedJoin(input.Context, input.LocalServerName, input.RoomQuerier, input.RoomID, input.SenderID)
+	authorisedVia, err := MustGetRoomVersion(
+		input.RoomVersion,
+	).CheckRestrictedJoin(input.Context, input.LocalServerName, input.RoomQuerier, input.RoomID, input.SenderID)
 	switch e := err.(type) {
 	case nil:
 	case spec.MatrixError:
@@ -113,7 +116,9 @@ func HandleMakeJoin(input HandleMakeJoinInput) (*HandleMakeJoinResponse, error) 
 		return nil, spec.InternalServerError{Err: "template builder returned nil event state"}
 	}
 	if event.Type() != spec.MRoomMember {
-		return nil, spec.InternalServerError{Err: fmt.Sprintf("expected join event from template builder. got: %s", event.Type())}
+		return nil, spec.InternalServerError{
+			Err: fmt.Sprintf("expected join event from template builder. got: %s", event.Type()),
+		}
 	}
 
 	provider, err := NewAuthEvents(state)
@@ -151,7 +156,13 @@ func roomVersionSupported(roomVersion RoomVersion, supportedVersions []RoomVersi
 	return remoteSupportsVersion
 }
 
-func noCheckRestrictedJoin(context.Context, spec.ServerName, RestrictedRoomJoinQuerier, spec.RoomID, spec.SenderID) (string, error) {
+func noCheckRestrictedJoin(
+	context.Context,
+	spec.ServerName,
+	RestrictedRoomJoinQuerier,
+	spec.RoomID,
+	spec.SenderID,
+) (string, error) {
 	return "", nil
 }
 
@@ -208,7 +219,7 @@ func checkRestrictedJoin(
 		return "", fmt.Errorf("roomQuerier.StateEvent: %w", err)
 	}
 	if powerLevelsEvent == nil {
-		return "", fmt.Errorf("invalid power levels event")
+		return "", errors.New("invalid power levels event")
 	}
 	powerLevels, err := powerLevelsEvent.PowerLevels()
 	if err != nil {
@@ -334,7 +345,9 @@ func HandleSendJoin(input HandleSendJoinInput) (*HandleSendJoinResponse, error) 
 
 	verImpl, err := GetRoomVersion(input.RoomVersion)
 	if err != nil {
-		return nil, spec.UnsupportedRoomVersion(fmt.Sprintf("QueryRoomVersionForRoom returned unknown room version: %s", input.RoomVersion))
+		return nil, spec.UnsupportedRoomVersion(
+			fmt.Sprintf("QueryRoomVersionForRoom returned unknown room version: %s", input.RoomVersion),
+		)
 	}
 
 	event, err := verImpl.NewEventFromUntrustedJSON(input.JoinEvent)
@@ -460,12 +473,21 @@ func HandleSendJoin(input HandleSendJoinInput) (*HandleSendJoinResponse, error) 
 	if memberContent.AuthorisedVia != "" {
 		authorisedVia, err := spec.NewUserID(memberContent.AuthorisedVia, true)
 		if err != nil {
-			util.Log(input.Context).WithError(err).WithField("username", memberContent.AuthorisedVia).Error("The authorising username is invalid.")
-			return nil, spec.BadJSON(fmt.Sprintf("The authorising username %q is invalid.", memberContent.AuthorisedVia))
+			util.Log(input.Context).
+				WithError(err).
+				WithField("username", memberContent.AuthorisedVia).
+				Error("The authorising username is invalid.")
+			return nil, spec.BadJSON(
+				fmt.Sprintf("The authorising username %q is invalid.", memberContent.AuthorisedVia),
+			)
 		}
 		if authorisedVia.Domain() != input.LocalServerName {
-			util.Log(input.Context).WithField("username", authorisedVia.String()).Error("The authorising username does not belong to this server.")
-			return nil, spec.BadJSON(fmt.Sprintf("The authorising username %q does not belong to this server.", authorisedVia.String()))
+			util.Log(input.Context).
+				WithField("username", authorisedVia.String()).
+				Error("The authorising username does not belong to this server.")
+			return nil, spec.BadJSON(
+				fmt.Sprintf("The authorising username %q does not belong to this server.", authorisedVia.String()),
+			)
 		}
 	}
 

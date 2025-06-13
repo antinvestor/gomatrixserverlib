@@ -28,8 +28,14 @@ type EventsLoader struct {
 	performSoftFailCheck bool
 }
 
-// NewEventsLoader returns a new events loader
-func NewEventsLoader(roomVer RoomVersion, keyRing JSONVerifier, stateProvider StateProvider, provider EventProvider, performSoftFailCheck bool) *EventsLoader {
+// NewEventsLoader returns a new events loader.
+func NewEventsLoader(
+	roomVer RoomVersion,
+	keyRing JSONVerifier,
+	stateProvider StateProvider,
+	provider EventProvider,
+	performSoftFailCheck bool,
+) *EventsLoader {
 	return &EventsLoader{
 		roomVer:              roomVer,
 		keyRing:              keyRing,
@@ -45,7 +51,12 @@ func NewEventsLoader(roomVer RoomVersion, keyRing JSONVerifier, stateProvider St
 // The order of the returned events depends on `sortOrder`. The events are reverse topologically sorted by the ordering specified. However,
 // in order to sort the events must be loaded which could fail. For those events which fail to be loaded, they will
 // be put at the end of the returned slice.
-func (l *EventsLoader) LoadAndVerify(ctx context.Context, rawEvents []json.RawMessage, sortOrder TopologicalOrder, userIDForSender spec.UserIDForSender) ([]EventLoadResult, error) {
+func (l *EventsLoader) LoadAndVerify(
+	ctx context.Context,
+	rawEvents []json.RawMessage,
+	sortOrder TopologicalOrder,
+	userIDForSender spec.UserIDForSender,
+) ([]EventLoadResult, error) {
 	results := make([]EventLoadResult, len(rawEvents))
 
 	verImpl, err := GetRoomVersion(l.roomVer)
@@ -68,7 +79,7 @@ func (l *EventsLoader) LoadAndVerify(ctx context.Context, rawEvents []json.RawMe
 
 	events = ReverseTopologicalOrdering(events, sortOrder)
 	// assign the errors to the end of the slice
-	for i := 0; i < len(errs); i++ {
+	for i := range len(errs) {
 		results[len(results)-len(errs)+i] = EventLoadResult{
 			Error: errs[i],
 		}
@@ -82,7 +93,11 @@ func (l *EventsLoader) LoadAndVerify(ctx context.Context, rawEvents []json.RawMe
 	// 2. Passes signature checks, otherwise it is dropped.
 	failures := VerifyAllEventSignatures(ctx, events, l.keyRing, userIDForSender)
 	if len(failures) != len(events) {
-		return nil, fmt.Errorf("gomatrixserverlib: bulk event signature verification length mismatch: %d != %d", len(failures), len(events))
+		return nil, fmt.Errorf(
+			"gomatrixserverlib: bulk event signature verification length mismatch: %d != %d",
+			len(failures),
+			len(events),
+		)
 	}
 	for i := range events {
 		h := events[i]

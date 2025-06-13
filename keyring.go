@@ -38,8 +38,7 @@ func (r *PublicKeyLookupRequest) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// PublicKeyNotExpired is a magic value for PublicKeyLookupResult.ExpiredTS:
-// it indicates that this is an active key which has not yet expired
+// it indicates that this is an active key which has not yet expired.
 const PublicKeyNotExpired = spec.Timestamp(0)
 
 // PublicKeyNotValid is a magic value for PublicKeyLookupResult.ValidUntilTS:
@@ -58,10 +57,10 @@ type PublicKeyLookupResult struct {
 	ValidUntilTS spec.Timestamp `json:"valid_until_ts"`
 }
 
-// SignatureValidityCheckFunc is a function used to validate signing keys
+// SignatureValidityCheckFunc is a function used to validate signing keys.
 type SignatureValidityCheckFunc func(atTS, validUntil spec.Timestamp) bool
 
-// StrictValiditySignatureCheck performs validation of potentially expired signing keys
+// StrictValiditySignatureCheck performs validation of potentially expired signing keys.
 func StrictValiditySignatureCheck(atTs, validUntil spec.Timestamp) bool {
 	if validUntil == PublicKeyNotValid {
 		return false
@@ -110,7 +109,10 @@ type KeyFetcher interface {
 	// The result may have fewer (server name, key ID) pairs than were in the request.
 	// The result may have more (server name, key ID) pairs than were in the request.
 	// Returns an error if there was a problem fetching the keys.
-	FetchKeys(ctx context.Context, requests map[PublicKeyLookupRequest]spec.Timestamp) (map[PublicKeyLookupRequest]PublicKeyLookupResult, error)
+	FetchKeys(
+		ctx context.Context,
+		requests map[PublicKeyLookupRequest]spec.Timestamp,
+	) (map[PublicKeyLookupRequest]PublicKeyLookupResult, error)
 
 	// FetcherName returns the name of this fetcher, which can then be used for
 	// logging errors etc.
@@ -170,7 +172,10 @@ type JSONVerifier interface {
 }
 
 // VerifyJSONs implements JSONVerifier.
-func (k KeyRing) VerifyJSONs(ctx context.Context, requests []VerifyJSONRequest) ([]VerifyJSONResult, error) { // nolint: gocyclo
+func (k KeyRing) VerifyJSONs(
+	ctx context.Context,
+	requests []VerifyJSONRequest,
+) ([]VerifyJSONResult, error) { // nolint: gocyclo
 	logger := util.Log(ctx)
 	results := make([]VerifyJSONResult, len(requests))
 	keyIDs := make([][]KeyID, len(requests))
@@ -183,7 +188,7 @@ func (k KeyRing) VerifyJSONs(ctx context.Context, requests []VerifyJSONRequest) 
 	for i := range requests {
 		ids, err := ListKeyIDs(string(requests[i].ServerName), requests[i].Message)
 		if err != nil {
-			results[i].Error = fmt.Errorf("gomatrixserverlib: error extracting key IDs")
+			results[i].Error = errors.New("gomatrixserverlib: error extracting key IDs")
 			continue
 		}
 		for _, keyID := range ids {
@@ -407,7 +412,11 @@ func (v JSONVerifierSelf) VerifyJSONs(ctx context.Context, requests []VerifyJSON
 
 type KeyClient interface {
 	GetServerKeys(ctx context.Context, matrixServer spec.ServerName) (ServerKeys, error)
-	LookupServerKeys(ctx context.Context, matrixServer spec.ServerName, keyRequests map[PublicKeyLookupRequest]spec.Timestamp) ([]ServerKeys, error)
+	LookupServerKeys(
+		ctx context.Context,
+		matrixServer spec.ServerName,
+		keyRequests map[PublicKeyLookupRequest]spec.Timestamp,
+	) ([]ServerKeys, error)
 }
 
 // A PerspectiveKeyFetcher fetches server keys from a single perspective server.
@@ -420,12 +429,12 @@ type PerspectiveKeyFetcher struct {
 	Client KeyClient
 }
 
-// FetcherName implements KeyFetcher
+// FetcherName implements KeyFetcher.
 func (p PerspectiveKeyFetcher) FetcherName() string {
 	return fmt.Sprintf("perspective server %s", p.PerspectiveServerName)
 }
 
-// FetchKeys implements KeyFetcher
+// FetchKeys implements KeyFetcher.
 func (p *PerspectiveKeyFetcher) FetchKeys(
 	ctx context.Context, requests map[PublicKeyLookupRequest]spec.Timestamp,
 ) (map[PublicKeyLookupRequest]PublicKeyLookupResult, error) {
@@ -459,14 +468,14 @@ func (p *PerspectiveKeyFetcher) FetchKeys(
 		}
 		if !valid {
 			// This means we don't have a known signature from the perspective server.
-			return nil, fmt.Errorf("gomatrixserverlib: not signed with a known key for the perspective server")
+			return nil, errors.New("gomatrixserverlib: not signed with a known key for the perspective server")
 		}
 
 		// Check that the keys are valid for the server they claim to be
 		checks, _ := CheckKeys(keys.ServerName, time.Unix(0, 0), keys)
 		if !checks.AllChecksOK {
 			// This is bad because it means that the perspective server was trying to feed us an invalid response.
-			return nil, fmt.Errorf("gomatrixserverlib: key response from perspective server failed checks")
+			return nil, errors.New("gomatrixserverlib: key response from perspective server failed checks")
 		}
 
 		// TODO (matrix-org/dendrite#345): What happens if the same key ID
@@ -487,16 +496,15 @@ type DirectKeyFetcher struct {
 	LocalPublicKey    spec.Base64Bytes
 }
 
-// FetcherName implements KeyFetcher
+// FetcherName implements KeyFetcher.
 func (d DirectKeyFetcher) FetcherName() string {
 	return "DirectKeyFetcher"
 }
 
-// FetchKeys implements KeyFetcher
+// FetchKeys implements KeyFetcher.
 func (d *DirectKeyFetcher) FetchKeys(
 	ctx context.Context, requests map[PublicKeyLookupRequest]spec.Timestamp,
 ) (map[PublicKeyLookupRequest]PublicKeyLookupResult, error) {
-
 	localServerRequests := []PublicKeyLookupRequest{}
 	byServer := map[spec.ServerName]map[PublicKeyLookupRequest]spec.Timestamp{}
 	for req, ts := range requests {
@@ -529,7 +537,9 @@ func (d *DirectKeyFetcher) FetchKeys(
 		VerifyKey: VerifyKey{Key: d.LocalPublicKey},
 		ExpiredTS: PublicKeyNotExpired,
 		// This must evaluate to a year which is 4 digits (ie. 2020), or the code breaks currently
-		ValidUntilTS: spec.AsTimestamp(time.Unix(1<<37, 0)), // NOTE: 6325-04-08 15:04:32 +0000 UTC (a date very far in the future)
+		ValidUntilTS: spec.AsTimestamp(
+			time.Unix(1<<37, 0),
+		), // NOTE: 6325-04-08 15:04:32 +0000 UTC (a date very far in the future)
 	}
 	for _, req := range localServerRequests {
 		results[req] = *localKey
@@ -568,7 +578,7 @@ func (d *DirectKeyFetcher) FetchKeys(
 	}
 
 	// Start the workers.
-	for i := 0; i < numWorkers; i++ {
+	for range numWorkers {
 		go worker(pending)
 	}
 
@@ -647,7 +657,10 @@ func (d *DirectKeyFetcher) fetchNotaryKeysForServer(
 // mapServerKeysToPublicKeyLookupResult takes the (verified) result from a
 // /key/v2/query call and inserts it into a PublicKeyLookupRequest->PublicKeyLookupResult
 // map.
-func mapServerKeysToPublicKeyLookupResult(serverKeys ServerKeys, results map[PublicKeyLookupRequest]PublicKeyLookupResult) {
+func mapServerKeysToPublicKeyLookupResult(
+	serverKeys ServerKeys,
+	results map[PublicKeyLookupRequest]PublicKeyLookupResult,
+) {
 	for keyID, key := range serverKeys.VerifyKeys {
 		results[PublicKeyLookupRequest{
 			ServerName: serverKeys.ServerName,

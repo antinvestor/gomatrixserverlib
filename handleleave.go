@@ -40,7 +40,6 @@ type HandleMakeLeaveInput struct {
 }
 
 func HandleMakeLeave(input HandleMakeLeaveInput) (*HandleMakeLeaveResponse, error) {
-
 	if input.UserID.Domain() != input.RequestOrigin {
 		return nil, spec.Forbidden(fmt.Sprintf("The leave must be sent by the server of the user. Origin %s != %s",
 			input.RequestOrigin, input.UserID.Domain()))
@@ -78,7 +77,9 @@ func HandleMakeLeave(input HandleMakeLeaveInput) (*HandleMakeLeaveResponse, erro
 		return nil, spec.InternalServerError{Err: "template builder returned nil event state"}
 	}
 	if event.Type() != spec.MRoomMember {
-		return nil, spec.InternalServerError{Err: fmt.Sprintf("expected leave event from template builder. got: %s", event.Type())}
+		return nil, spec.InternalServerError{
+			Err: fmt.Sprintf("expected leave event from template builder. got: %s", event.Type()),
+		}
 	}
 
 	provider, err := NewAuthEvents(stateEvents)

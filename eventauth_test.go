@@ -1196,7 +1196,7 @@ func TestPowerLevelCheckShouldNotPanic(t *testing.T) {
 		if err := Allowed(powerChangeBadUser, powerLevelTestRoom, NilUserIDForBadSenderTest); err == nil {
 			panic("Event should not be allowed")
 		}
-	}, "")
+	})
 
 	powerChange, err := MustGetRoomVersion(RoomVersionV1).NewEventFromTrustedJSON(json.RawMessage(`{
 		"type": "m.room.power_levels",
@@ -1219,7 +1219,7 @@ func TestPowerLevelCheckShouldNotPanic(t *testing.T) {
 		if err := Allowed(powerChange, nilPowerLevelTestRoom, NilUserIDForBadSenderTest); err == nil {
 			panic("Event should not be allowed")
 		}
-	}, "")
+	})
 }
 
 func TestPromoteUserDefaultLevelAboveOwn(t *testing.T) {
@@ -1539,7 +1539,12 @@ func Test_checkUserLevels(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := checkUserLevels(tt.args.senderLevel, spec.SenderID(senderID), tt.args.oldPowerLevels, tt.args.newPowerLevels)
+			err := checkUserLevels(
+				tt.args.senderLevel,
+				spec.SenderID(senderID),
+				tt.args.oldPowerLevels,
+				tt.args.newPowerLevels,
+			)
 			if err != nil && !tt.wantErr {
 				t.Errorf("checkUserLevels() error = %v, wantErr %v", err, tt.wantErr)
 			} else {
@@ -1551,8 +1556,7 @@ func Test_checkUserLevels(t *testing.T) {
 	}
 }
 
-// Test that we allow broken membership content, i.e.
-// displayname is boolean, an object or array
+// displayname is boolean, an object or array.
 func TestMembershipAllowed(t *testing.T) {
 	testEventAllowed(t, `{
 		"auth_events": {

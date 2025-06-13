@@ -56,32 +56,39 @@ type PreviousRoom struct {
 
 // NewCreateContentFromAuthEvents loads the create event content from the create event in the
 // auth events.
-func NewCreateContentFromAuthEvents(authEvents AuthEventProvider, userIDForSender spec.UserIDForSender) (c CreateContent, err error) {
+func NewCreateContentFromAuthEvents(
+	authEvents AuthEventProvider,
+	userIDForSender spec.UserIDForSender,
+) (c CreateContent, err error) {
 	var createEvent PDU
 	if createEvent, err = authEvents.Create(); err != nil {
-		return
+		return c, err
 	}
 	if createEvent == nil {
 		err = errorf("missing create event")
-		return
+		return c, err
 	}
 	if err = json.Unmarshal(createEvent.Content(), &c); err != nil {
 		err = errorf("unparseable create event content: %s", err.Error())
-		return
+		return c, err
 	}
 	c.roomID = createEvent.RoomID().String()
 	c.eventID = createEvent.EventID()
 	sender, err := userIDForSender(createEvent.RoomID(), createEvent.SenderID())
 	if err != nil {
 		err = errorf("invalid sender userID: %s", err.Error())
-		return
+		return c, err
 	}
 	if sender == nil {
-		err = errorf("userID not found for sender: %s in room %s", createEvent.SenderID(), createEvent.RoomID().String())
-		return
+		err = errorf(
+			"userID not found for sender: %s in room %s",
+			createEvent.SenderID(),
+			createEvent.RoomID().String(),
+		)
+		return c, err
 	}
 	c.senderDomain = string(sender.Domain())
-	return
+	return c, err
 }
 
 // DomainAllowed checks whether the domain is allowed in the room by the
@@ -190,13 +197,13 @@ type MemberThirdPartyInviteSigned struct {
 func NewMemberContentFromAuthEvents(authEvents AuthEventProvider, senderID spec.SenderID) (c MemberContent, err error) {
 	var memberEvent PDU
 	if memberEvent, err = authEvents.Member(senderID); err != nil {
-		return
+		return c, err
 	}
 	if memberEvent == nil {
 		// If there isn't a member event then the membership for the user
 		// defaults to leave.
 		c.Membership = spec.Leave
-		return
+		return c, err
 	}
 	return NewMemberContentFromEvent(memberEvent)
 }
@@ -208,14 +215,14 @@ func NewMemberContentFromEvent(event PDU) (c MemberContent, err error) {
 		var partial membershipContent
 		if err = json.Unmarshal(event.Content(), &partial); err != nil {
 			err = errorf("unparseable member event content: %s", err.Error())
-			return
+			return c, err
 		}
 		c.Membership = partial.Membership
 		c.ThirdPartyInvite = partial.ThirdPartyInvite
 		c.AuthorisedVia = partial.AuthorizedVia
 		c.MXIDMapping = partial.MXIDMapping
 	}
-	return
+	return c, err
 }
 
 // ThirdPartyInviteContent is the JSON content of a m.room.third_party_invite event needed for auth checks.
@@ -237,20 +244,23 @@ type PublicKey struct {
 
 // NewThirdPartyInviteContentFromAuthEvents loads the third party invite content from the third party invite event for the state key (token) in the auth events.
 // Returns an error if there was an error loading the third party invite event or parsing the event content.
-func NewThirdPartyInviteContentFromAuthEvents(authEvents AuthEventProvider, token string) (t ThirdPartyInviteContent, err error) {
+func NewThirdPartyInviteContentFromAuthEvents(
+	authEvents AuthEventProvider,
+	token string,
+) (t ThirdPartyInviteContent, err error) {
 	var thirdPartyInviteEvent PDU
 	if thirdPartyInviteEvent, err = authEvents.ThirdPartyInvite(token); err != nil {
-		return
+		return t, err
 	}
 	if thirdPartyInviteEvent == nil {
 		// If there isn't a third_party_invite event, then we return with an error
 		err = errorf("Couldn't find third party invite event")
-		return
+		return t, err
 	}
 	if err = json.Unmarshal(thirdPartyInviteEvent.Content(), &t); err != nil {
 		err = errorf("unparseable third party invite event content: %s", err.Error())
 	}
-	return
+	return t, err
 }
 
 // HistoryVisibilityContent is the JSON content of a m.room.history_visibility event.
@@ -268,7 +278,7 @@ const (
 	HistoryVisibilityJoined        HistoryVisibility = "joined"
 )
 
-// Scan implements sql.Scanner
+// Scan implements sql.Scanner.
 func (h *HistoryVisibility) Scan(src interface{}) error {
 	switch v := src.(type) {
 	case int64:
@@ -292,7 +302,7 @@ func (h *HistoryVisibility) Scan(src interface{}) error {
 	}
 }
 
-// Value implements sql.Valuer
+// Value implements sql.Valuer.
 func (h HistoryVisibility) Value() (driver.Value, error) {
 	v, ok := hisVisStringToIntMapping[h]
 	if !ok {
@@ -337,16 +347,16 @@ func NewJoinRuleContentFromAuthEvents(authEvents AuthEventProvider) (c JoinRuleC
 	// Then see if the specified join event contains something better.
 	joinRulesEvent, err := authEvents.JoinRules()
 	if err != nil {
-		return
+		return c, err
 	}
 	if joinRulesEvent == nil {
-		return
+		return c, err
 	}
 	if err = json.Unmarshal(joinRulesEvent.Content(), &c); err != nil {
 		err = errorf("unparseable join_rules event content: %s", err.Error())
-		return
+		return c, err
 	}
-	return
+	return c, err
 }
 
 // PowerLevelContent is the JSON content of a m.room.power_levels event needed for auth checks.
@@ -409,10 +419,13 @@ func (c *PowerLevelContent) NotificationLevel(notification string) int64 {
 // NewPowerLevelContentFromAuthEvents loads the power level content from the
 // power level event in the auth events or returns the default values if there
 // is no power level event.
-func NewPowerLevelContentFromAuthEvents(authEvents AuthEventProvider, creatorUserID string) (c PowerLevelContent, err error) {
+func NewPowerLevelContentFromAuthEvents(
+	authEvents AuthEventProvider,
+	creatorUserID string,
+) (c PowerLevelContent, err error) {
 	powerLevelsEvent, err := authEvents.PowerLevels()
 	if err != nil {
-		return
+		return c, err
 	}
 	if powerLevelsEvent != nil {
 		return NewPowerLevelContentFromEvent(powerLevelsEvent)
@@ -430,7 +443,7 @@ func NewPowerLevelContentFromAuthEvents(authEvents AuthEventProvider, creatorUse
 	// Previously it was 0, but this was changed in:
 	// https://github.com/matrix-org/synapse/commit/5c9afd6f80cf04367fe9b02c396af9f85e02a611
 	c.StateDefault = 50
-	return
+	return c, err
 }
 
 // Defaults sets the power levels to their default values.
@@ -460,9 +473,9 @@ func NewPowerLevelContentFromEvent(event PDU) (c PowerLevelContent, err error) {
 
 	if err = verImpl.ParsePowerLevels(event.Content(), &c); err != nil {
 		err = errorf("unparseable power_levels event content: %s", err.Error())
-		return
+		return c, err
 	}
-	return
+	return c, err
 }
 
 // parseIntegerPowerLevels unmarshals directly to PowerLevelContent, since that will kick up an

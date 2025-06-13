@@ -12,7 +12,13 @@ import (
 type BackfillClient interface {
 	// Backfill performs a backfill request to the given server.
 	// https://matrix.org/docs/spec/server_server/latest#get-matrix-federation-v1-backfill-roomid
-	Backfill(ctx context.Context, origin, server spec.ServerName, roomID string, limit int, fromEventIDs []string) (Transaction, error)
+	Backfill(
+		ctx context.Context,
+		origin, server spec.ServerName,
+		roomID string,
+		limit int,
+		fromEventIDs []string,
+	) (Transaction, error)
 }
 
 // BackfillRequester contains the necessary functions to perform backfill requests from one server to another.
@@ -47,9 +53,17 @@ type BackfillRequester interface {
 // but to verify it we need to know the prev_events of fromEventIDs.
 //
 // TODO: When does it make sense to return errors?
-func RequestBackfill(ctx context.Context, origin spec.ServerName, b BackfillRequester, keyRing JSONVerifier,
-	roomID string, ver RoomVersion, fromEventIDs []string, limit int, userIDForSender spec.UserIDForSender) ([]PDU, error) {
-
+func RequestBackfill(
+	ctx context.Context,
+	origin spec.ServerName,
+	b BackfillRequester,
+	keyRing JSONVerifier,
+	roomID string,
+	ver RoomVersion,
+	fromEventIDs []string,
+	limit int,
+	userIDForSender spec.UserIDForSender,
+) ([]PDU, error) {
 	if len(fromEventIDs) == 0 {
 		return nil, nil
 	}
