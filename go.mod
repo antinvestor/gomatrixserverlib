@@ -3,7 +3,7 @@ module github.com/antinvestor/gomatrixserverlib
 go 1.24.0
 
 require (
-	github.com/antinvestor/gomatrix v0.1.3
+	github.com/antinvestor/gomatrix v0.1.4
 	github.com/google/go-cmp v0.7.0
 	github.com/miekg/dns v1.1.66
 	github.com/pitabwire/util v0.2.4
