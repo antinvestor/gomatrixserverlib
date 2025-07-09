@@ -270,7 +270,7 @@ func isAllowed(ip net.IP, allowCIDRs []string, denyCIDRs []string) bool {
 }
 
 func inRange(ip net.IP, CIDRs []string) bool {
-	for i := range len(CIDRs) {
+	for i := range CIDRs {
 		cidr := CIDRs[i]
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {

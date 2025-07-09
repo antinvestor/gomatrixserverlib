@@ -1,4 +1,4 @@
-// nolint:testpackage
+//nolint:testpackage
 package gomatrixserverlib
 
 import (
@@ -113,10 +113,10 @@ func TestHandleMakeLeave(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
-		input           HandleMakeLeaveInput
-		want            *HandleMakeLeaveResponse
-		expectError     bool
+		name        string
+		input       HandleMakeLeaveInput
+		want        *HandleMakeLeaveResponse
+		expectError bool
 	}{
 		{
 			name: "wrong destination",

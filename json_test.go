@@ -151,7 +151,7 @@ func TestVerifyCanonical(t *testing.T) {
 		//	name:    "long form unicode",
 		//	input:   []byte(`{"\u0009":0}`),
 		//	valid: false,
-		//},
+		// },
 		//{
 		//	name:    "escaped unicode surrogate pair",
 		//	input:   []byte(`{"\ud83d\udc08":0}`),
@@ -191,7 +191,7 @@ func TestVerifyCanonical(t *testing.T) {
 		//	name:    "unsorted keys in array",
 		//	input:   []byte(`{"a":[{"b":0,"a":1},{"b":0,"a":1}]}`),
 		//	valid: false,
-		//},
+		// },
 		//{
 		//	name:    "unnecessary whitespace",
 		//	input:   []byte(`{"a": 0}`),
@@ -221,7 +221,7 @@ func TestVerifyCanonical(t *testing.T) {
 		//	name:      "nested duplicate keys",
 		//	input:     []byte(`{"a":[{"a":0,"a":1}]}`),
 		//	valid:   false,
-		//},
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

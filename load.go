@@ -79,7 +79,7 @@ func (l *EventsLoader) LoadAndVerify(
 
 	events = ReverseTopologicalOrdering(events, sortOrder)
 	// assign the errors to the end of the slice
-	for i := range len(errs) {
+	for i := range errs {
 		results[len(results)-len(errs)+i] = EventLoadResult{
 			Error: errs[i],
 		}
