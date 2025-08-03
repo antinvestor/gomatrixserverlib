@@ -6,7 +6,7 @@ require (
 	github.com/antinvestor/gomatrix v0.1.4
 	github.com/google/go-cmp v0.7.0
 	github.com/miekg/dns v1.1.68
-	github.com/pitabwire/util v0.3.3
+	github.com/pitabwire/util v0.3.4
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
