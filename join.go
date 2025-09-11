@@ -59,7 +59,7 @@ type ProtoEvent struct {
 	// The JSON object for "content" key of the event.
 	Content json.RawMessage `json:"content"`
 	// The JSON object for the "unsigned" key
-	Unsigned spec.RawJSON `json:"unsigned,omitempty"`
+	Unsigned json.RawMessage `json:"unsigned,omitempty"`
 
 	Version IRoomVersion `json:"-"` // exclude this field
 }

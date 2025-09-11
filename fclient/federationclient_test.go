@@ -3,6 +3,7 @@ package fclient_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"

@@ -5,7 +5,9 @@ go 1.24.0
 require (
 	github.com/antinvestor/gomatrix v0.1.4
 	github.com/google/go-cmp v0.7.0
+	github.com/hashicorp/go-set/v3 v3.0.0
 	github.com/miekg/dns v1.1.68
+	github.com/oleiade/lane/v2 v2.0.0
 	github.com/pitabwire/util v0.3.4
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
@@ -20,9 +22,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/frankban/quicktest v1.14.6 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
-	github.com/hashicorp/go-set/v3 v3.0.0 // indirect
 	github.com/lmittmann/tint v1.1.2 // indirect
-	github.com/oleiade/lane/v2 v2.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
