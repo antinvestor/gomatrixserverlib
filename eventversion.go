@@ -12,6 +12,8 @@ import (
 // RoomVersion refers to the room version for a specific room.
 type RoomVersion string
 
+// The interface which needs to be implemented to register a room version with gomatrixserverlib.
+// All types should be public to allow for extensibility.
 type IRoomVersion interface {
 	Version() RoomVersion
 	Stable() bool
@@ -35,14 +37,16 @@ type IRoomVersion interface {
 
 	RestrictedJoinServername(content []byte) (spec.ServerName, error)
 	CheckRestrictedJoinsAllowed() error
-	CheckKnockingAllowed(m *membershipAllower) error
-	CheckNotificationLevels(senderLevel int64, oldPowerLevels, newPowerLevels PowerLevelContent) error
+	CheckKnockingAllowed(roomVer, sender, target, joinRule, prevMembership string) error
+	CheckPowerLevelEvent(sender string, createEvent PDU, oldPowerLevels, newPowerLevels PowerLevelContent) error
 	CheckCanonicalJSON(input []byte) error
 	ParsePowerLevels(contentBytes []byte, c *PowerLevelContent) error
-	CheckCreateEvent(event PDU, knownRoomVersion knownRoomVersionFunc) error
+	CheckCreateEvent(event PDU, sender spec.UserID, knownRoomVersion KnownRoomVersionFunc) error
+	DomainlessRoomIDs() bool
+	PrivilegedCreators() bool
 }
 
-type knownRoomVersionFunc func(RoomVersion) bool
+type KnownRoomVersionFunc func(RoomVersion) bool
 
 // StateResAlgorithm refers to a version of the state resolution algorithm.
 type StateResAlgorithm int
@@ -68,7 +72,9 @@ const (
 	RoomVersionV9        RoomVersion = "9"
 	RoomVersionV10       RoomVersion = "10"
 	RoomVersionV11       RoomVersion = "11"
+	RoomVersionV12       RoomVersion = "12"
 	RoomVersionPseudoIDs RoomVersion = "org.matrix.msc4014"
+	RoomVersionHydra     RoomVersion = "org.matrix.hydra.11"
 )
 
 // Event format constants.
@@ -86,8 +92,9 @@ const (
 
 // State resolution constants.
 const (
-	StateResV1 StateResAlgorithm = iota + 1 // state resolution v1
-	StateResV2                              // state resolution v2
+	StateResV1   StateResAlgorithm = iota + 1 // state resolution v1
+	StateResV2                                // state resolution v2
+	StateResV2_1                              // state resolution v2.1
 )
 
 var roomVersionMeta = map[RoomVersion]IRoomVersion{
@@ -100,13 +107,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV1,
 		signatureValidityCheckFunc:             NoStrictValidityCheck,
 		canonicalJSONCheck:                     noVerifyCanonicalJSON,
-		notificationLevelCheck:                 noCheckLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV1,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               disallowKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV1,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV1,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV1,
@@ -120,13 +127,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV1,
 		signatureValidityCheckFunc:             NoStrictValidityCheck,
 		canonicalJSONCheck:                     noVerifyCanonicalJSON,
-		notificationLevelCheck:                 noCheckLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV1,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               disallowKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV1,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV1,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV1,
@@ -140,13 +147,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV1,
 		signatureValidityCheckFunc:             NoStrictValidityCheck,
 		canonicalJSONCheck:                     noVerifyCanonicalJSON,
-		notificationLevelCheck:                 noCheckLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV1,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               disallowKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -160,13 +167,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV1,
 		signatureValidityCheckFunc:             NoStrictValidityCheck,
 		canonicalJSONCheck:                     noVerifyCanonicalJSON,
-		notificationLevelCheck:                 noCheckLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV1,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               disallowKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -180,13 +187,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV1,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     noVerifyCanonicalJSON,
-		notificationLevelCheck:                 noCheckLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV1,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               disallowKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -200,13 +207,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV2,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               disallowKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -220,13 +227,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV2,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -240,13 +247,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV3,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           extractAuthorisedViaServerName,
 		checkRestrictedJoin:                    checkRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         allowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -260,13 +267,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV4,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           extractAuthorisedViaServerName,
 		checkRestrictedJoin:                    checkRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         allowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -280,13 +287,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV4,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           extractAuthorisedViaServerName,
 		checkRestrictedJoin:                    checkRestrictedJoin,
 		parsePowerLevelsFunc:                   parseIntegerPowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         allowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -300,16 +307,39 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV5,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           extractAuthorisedViaServerName,
 		checkRestrictedJoin:                    checkRestrictedJoin,
 		parsePowerLevelsFunc:                   parseIntegerPowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         allowRestrictedJoins,
-		checkCreateEvent:                       noCheckCreateEvent,
+		checkCreateEvent:                       checkCreateEventV2,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
+	},
+	RoomVersionV12: RoomVersionImpl{
+		ver:                            RoomVersionV12,
+		stable:                         true,
+		stateResAlgorithm:              StateResV2_1,
+		eventFormat:                    EventFormatV2,
+		eventIDFormat:                  EventIDFormatV3,
+		redactionAlgorithm:             redactEventJSONV5,
+		signatureValidityCheckFunc:     StrictValiditySignatureCheck,
+		canonicalJSONCheck:             verifyEnforcedCanonicalJSON,
+		checkPowerLevelEvent:           checkPowerLevelEventV3,
+		restrictedJoinServernameFunc:   extractAuthorisedViaServerName,
+		checkRestrictedJoin:            checkRestrictedJoin,
+		parsePowerLevelsFunc:           parseIntegerPowerLevels,
+		checkKnockingAllowedFunc:       checkKnocking,
+		checkRestrictedJoinAllowedFunc: allowRestrictedJoins,
+		checkCreateEvent:               checkCreateEventV3,
+		// v3 versions relax the room ID check as the room ID has no domain now.
+		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV3,
+		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV3,
+		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV3,
+		domainlessRoomID:                       true,
+		privilegedCreators:                     true,
 	},
 	RoomVersionPseudoIDs: RoomVersionImpl{ // currently, just a copy of V10
 		ver:                                    RoomVersionPseudoIDs,
@@ -320,13 +350,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV4,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           extractAuthorisedViaServerName,
 		checkRestrictedJoin:                    checkRestrictedJoin,
 		parsePowerLevelsFunc:                   parseIntegerPowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         allowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -340,13 +370,13 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV2,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           emptyAuthorisedViaServerName,
 		checkRestrictedJoin:                    noCheckRestrictedJoin,
 		parsePowerLevelsFunc:                   parseIntegerPowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
 		checkRestrictedJoinAllowedFunc:         disallowRestrictedJoins,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
@@ -360,15 +390,38 @@ var roomVersionMeta = map[RoomVersion]IRoomVersion{
 		redactionAlgorithm:                     redactEventJSONV4,
 		signatureValidityCheckFunc:             StrictValiditySignatureCheck,
 		canonicalJSONCheck:                     verifyEnforcedCanonicalJSON,
-		notificationLevelCheck:                 checkNotificationLevels,
+		checkPowerLevelEvent:                   checkPowerLevelEventV2,
 		restrictedJoinServernameFunc:           extractAuthorisedViaServerName,
 		checkRestrictedJoin:                    checkRestrictedJoin,
 		parsePowerLevelsFunc:                   parsePowerLevels,
 		checkKnockingAllowedFunc:               checkKnocking,
-		checkCreateEvent:                       checkCreateEvent,
+		checkCreateEvent:                       checkCreateEventV1,
 		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV2,
 		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV2,
 		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV2,
+	},
+	RoomVersionHydra: RoomVersionImpl{
+		ver:                            RoomVersionHydra,
+		stable:                         false,
+		stateResAlgorithm:              StateResV2_1,
+		eventFormat:                    EventFormatV2,
+		eventIDFormat:                  EventIDFormatV3,
+		redactionAlgorithm:             redactEventJSONV5,
+		signatureValidityCheckFunc:     StrictValiditySignatureCheck,
+		canonicalJSONCheck:             verifyEnforcedCanonicalJSON,
+		checkPowerLevelEvent:           checkPowerLevelEventV3,
+		restrictedJoinServernameFunc:   extractAuthorisedViaServerName,
+		checkRestrictedJoin:            checkRestrictedJoin,
+		parsePowerLevelsFunc:           parseIntegerPowerLevels,
+		checkKnockingAllowedFunc:       checkKnocking,
+		checkRestrictedJoinAllowedFunc: allowRestrictedJoins,
+		checkCreateEvent:               checkCreateEventV3,
+		// v3 versions relax the room ID check as the room ID has no domain now.
+		newEventFromUntrustedJSONFunc:          newEventFromUntrustedJSONV3,
+		newEventFromTrustedJSONFunc:            newEventFromTrustedJSONV3,
+		newEventFromTrustedJSONWithEventIDFunc: newEventFromTrustedJSONWithEventIDV3,
+		domainlessRoomID:                       true,
+		privilegedCreators:                     true,
 	},
 }
 
@@ -422,6 +475,14 @@ func StableRoomVersions() map[RoomVersion]IRoomVersion {
 	return versions
 }
 
+// SetRoomVersion sets a room version implementation so it is recognised by gomatrixserverlib.
+// This is useful when you are testing custom room versions which gomatrixserverlib may be unaware of,
+// e.g for Complement usage. Full room version impls should be defined in gomatrixserverlib, but
+// partial impls for testing can be set here.
+func SetRoomVersion(ver IRoomVersion) {
+	roomVersionMeta[ver.Version()] = ver
+}
+
 // RoomVersionDescription contains information about a room version,
 // namely whether it is marked as supported or stable in this server
 // version, along with the state resolution algorithm, event ID etc
@@ -433,27 +494,30 @@ func StableRoomVersions() map[RoomVersion]IRoomVersion {
 // calling the /capabilities endpoint.
 // https://matrix.org/docs/spec/client_server/r0.6.0#get-matrix-client-r0-capabilities
 type RoomVersionImpl struct {
-	ver                                    RoomVersion
-	stateResAlgorithm                      StateResAlgorithm
-	eventFormat                            EventFormat
-	eventIDFormat                          EventIDFormat
-	redactionAlgorithm                     func(eventJSON []byte) ([]byte, error)
-	signatureValidityCheckFunc             SignatureValidityCheckFunc
-	canonicalJSONCheck                     func(eventJSON []byte) error
-	notificationLevelCheck                 func(senderLevel int64, oldPowerLevels, newPowerLevels PowerLevelContent) error
-	parsePowerLevelsFunc                   func(contentBytes []byte, c *PowerLevelContent) error
-	stable                                 bool
-	checkRestrictedJoin                    restrictedJoinCheckFunc
-	restrictedJoinServernameFunc           func(content []byte) (spec.ServerName, error)
-	checkRestrictedJoinAllowedFunc         func() error
-	checkKnockingAllowedFunc               func(m *membershipAllower) error
-	checkCreateEvent                       func(e PDU, knownRoomVersion knownRoomVersionFunc) error
+	ver                        RoomVersion
+	stateResAlgorithm          StateResAlgorithm
+	eventFormat                EventFormat
+	eventIDFormat              EventIDFormat
+	redactionAlgorithm         func(eventJSON []byte) ([]byte, error)
+	signatureValidityCheckFunc SignatureValidityCheckFunc
+	canonicalJSONCheck         func(eventJSON []byte) error
+	checkPowerLevelEvent       func(sender string, createEvent PDU, oldPowerLevels, newPowerLevels PowerLevelContent) error
+	parsePowerLevelsFunc       func(contentBytes []byte, c *PowerLevelContent) error
+	stable                     bool
+	// whether auth_events should include the create event
+	domainlessRoomID bool
+	// creators have infinite PL
+	privilegedCreators             bool
+	checkRestrictedJoin            func(ctx context.Context, localServerName spec.ServerName, roomQuerier RestrictedRoomJoinQuerier, roomID spec.RoomID, senderID spec.SenderID, privilegedCreators bool) (string, error)
+	restrictedJoinServernameFunc   func(content []byte) (spec.ServerName, error)
+	checkRestrictedJoinAllowedFunc func() error
+	checkKnockingAllowedFunc       func(roomVer, sender, target, joinRule, prevMembership string) error
+	checkCreateEvent               func(e PDU, sender spec.UserID, knownRoomVersion KnownRoomVersionFunc) error
+
 	newEventFromUntrustedJSONFunc          func(eventJSON []byte, roomVersion IRoomVersion) (result PDU, err error)
 	newEventFromTrustedJSONFunc            func(eventJSON []byte, redacted bool, roomVersion IRoomVersion) (result PDU, err error)
 	newEventFromTrustedJSONWithEventIDFunc func(eventID string, eventJSON []byte, redacted bool, roomVersion IRoomVersion) (result PDU, err error)
 }
-
-type restrictedJoinCheckFunc func(ctx context.Context, localServerName spec.ServerName, roomQuerier RestrictedRoomJoinQuerier, roomID spec.RoomID, senderID spec.SenderID) (string, error)
 
 func (v RoomVersionImpl) Version() RoomVersion {
 	return v.ver
@@ -461,6 +525,14 @@ func (v RoomVersionImpl) Version() RoomVersion {
 
 func (v RoomVersionImpl) Stable() bool {
 	return v.stable
+}
+
+func (v RoomVersionImpl) DomainlessRoomIDs() bool {
+	return v.domainlessRoomID
+}
+
+func (v RoomVersionImpl) PrivilegedCreators() bool {
+	return v.privilegedCreators
 }
 
 // StateResAlgorithm returns the state resolution for the given room version.
@@ -483,17 +555,14 @@ func (v RoomVersionImpl) SignatureValidityCheck(atTS, validUntilTS spec.Timestam
 	return v.signatureValidityCheckFunc(atTS, validUntilTS)
 }
 
-// CheckNotificationLevels checks that the changes in notification levels are allowed.
-func (v RoomVersionImpl) CheckNotificationLevels(
-	senderLevel int64,
-	oldPowerLevels, newPowerLevels PowerLevelContent,
-) error {
-	return v.notificationLevelCheck(senderLevel, oldPowerLevels, newPowerLevels)
+// CheckPowerLevelEvent checks that the PL event is allowed.
+func (v RoomVersionImpl) CheckPowerLevelEvent(sender string, createEvent PDU, oldPowerLevels, newPowerLevels PowerLevelContent) error {
+	return v.checkPowerLevelEvent(sender, createEvent, oldPowerLevels, newPowerLevels)
 }
 
 // CheckKnockingAllowed checks if this room version supports knocking on rooms.
-func (v RoomVersionImpl) CheckKnockingAllowed(m *membershipAllower) error {
-	return v.checkKnockingAllowedFunc(m)
+func (v RoomVersionImpl) CheckKnockingAllowed(roomVer, sender, target, joinRule, prevMembership string) error {
+	return v.checkKnockingAllowedFunc(roomVer, sender, target, joinRule, prevMembership)
 }
 
 // CheckRestrictedJoinsAllowed checks if this room version allows restricted joins.
@@ -517,8 +586,8 @@ func (v RoomVersionImpl) ParsePowerLevels(contentBytes []byte, c *PowerLevelCont
 	return v.parsePowerLevelsFunc(contentBytes, c)
 }
 
-func (v RoomVersionImpl) CheckCreateEvent(event PDU, knownRoomVersion knownRoomVersionFunc) error {
-	return v.checkCreateEvent(event, knownRoomVersion)
+func (v RoomVersionImpl) CheckCreateEvent(event PDU, sender spec.UserID, knownRoomVersion KnownRoomVersionFunc) error {
+	return v.checkCreateEvent(event, sender, knownRoomVersion)
 }
 
 func (v RoomVersionImpl) CheckRestrictedJoin(
@@ -527,7 +596,7 @@ func (v RoomVersionImpl) CheckRestrictedJoin(
 	roomQuerier RestrictedRoomJoinQuerier,
 	roomID spec.RoomID, senderID spec.SenderID,
 ) (string, error) {
-	return v.checkRestrictedJoin(ctx, localServerName, roomQuerier, roomID, senderID)
+	return v.checkRestrictedJoin(ctx, localServerName, roomQuerier, roomID, senderID, v.privilegedCreators)
 }
 
 // RedactEventJSON strips the user controlled fields from an event, but leaves the

@@ -59,7 +59,9 @@ type ProtoEvent struct {
 	// The JSON object for "content" key of the event.
 	Content json.RawMessage `json:"content"`
 	// The JSON object for the "unsigned" key
-	Unsigned json.RawMessage `json:"unsigned,omitempty"`
+	Unsigned spec.RawJSON `json:"unsigned,omitempty"`
+
+	Version IRoomVersion `json:"-"` // exclude this field
 }
 
 func (pe *ProtoEvent) SetContent(content interface{}) (err error) {

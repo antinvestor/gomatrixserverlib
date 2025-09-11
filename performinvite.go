@@ -88,6 +88,7 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 			fmt.Sprintf("Room version %q is not supported by this server.", input.RoomVersion),
 		)
 	}
+	input.EventTemplate.Version = verImpl
 
 	invitedSenderID, err := input.SenderIDQuerier(input.RoomID, input.Invitee)
 	if err != nil {
@@ -108,6 +109,9 @@ func PerformInvite(ctx context.Context, input PerformInviteInput, fedClient Fede
 
 	if len(stateNeeded.Tuples()) == 0 {
 		return nil, spec.InternalServerError{}
+	}
+	if stateNeeded.Create && verImpl.DomainlessRoomIDs() {
+		stateNeeded.Create = false
 	}
 
 	latestEvents, err := input.EventQuerier(ctx, input.RoomID, stateNeeded.Tuples())
