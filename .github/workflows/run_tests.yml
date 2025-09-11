@@ -14,7 +14,7 @@ jobs:
       - name: Setup go testing infrastructure
         uses: actions/setup-go@v5
         with:
-          go-version: '^1.24'
+          go-version: 'stable'
 
   # run go test with different go versions
   test:
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ["stable", "1.24"]
+        go: ["stable"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup go
@@ -39,4 +39,12 @@ jobs:
           key: ${{ runner.os }}-go${{ matrix.go }}-test-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go${{ matrix.go }}-test-
-      - run: go test -race -coverpkg=./... -coverprofile=cover.out $(go list ./...)
+      - name: Set up gotestfmt
+        uses: gotesttools/gotestfmt-action@v2
+        with:
+          # Optional: pass GITHUB_TOKEN to avoid rate limiting.
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run tests with coverage
+        env:
+          GOTOOLCHAIN: go1.25.0+auto
+        run: go test -race -json -v ./... 2>&1 | gotestfmt -hide all
